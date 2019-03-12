@@ -144,7 +144,26 @@ SELECT resultDayOne.minCode as Code,
   ON resultFinalDay.lastCode = resultDayOne.minCode
   ORDER BY Gain desc, Code asc;
 
-  create or replace view Q15(Code, MinPrice, AvgPrice, MaxPrice, MinDayGain, AvgDayGain, MaxDayGain) as
+create or replace view Q15(Code, MinPrice, AvgPrice, MaxPrice, MinDayGain, AvgDayGain, MaxDayGain) as
+  SELECT result.code,
+         MIN(result.price),
+         AVG(result.price),
+         MAX(result.price),
+         MIN(result.gain),
+         AVG(result.gain),
+         MAX(result.gain)
+  FROM (SELECT "Date",
+               code,
+               volume,
+               LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date"),
+               price,
+               (price - LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date")),
+               ((price -
+                 LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date")) /
+                LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date") * 100) as gain
+        FROM asx) result
+  WHERE result."Date" != (SELECT MIN("Date") from asx)
+  GROUP by result.code;
 
 
 -- create or replace view test(Sector, country, code, OutsideAustralia) as
