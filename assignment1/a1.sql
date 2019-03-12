@@ -94,9 +94,13 @@ create or replace view Q12(Name) as
   ORDER BY result.name;
 
 create or replace view Q13(Code, Name, Address, Zip, Sector) as
-  SELECT originalCategory.code, originalCompany.name, originalCompany.address,
+  SELECT originalCategory.code, originalCompany.Name, originalCompany.address,
          originalCompany.zip, originalCategory.sector
-  FROM(
+  FROM category originalCategory
+  JOIN company originalCompany
+      on originalCategory.code = originalCompany.code
+      AND originalCompany.country = 'Australia'
+  LEFT JOIN (
       SELECT category1.sector as companySector,
                company1.country as companyAddress,
                company1.code as invalidCodes,
@@ -104,13 +108,44 @@ create or replace view Q13(Code, Name, Address, Zip, Sector) as
         FROM company company1 join category category1 on
             company1.code = category1.code
             WHERE company1.country != 'Australia'
-      ) comp
+      )AS comp
+  ON originalCategory.sector = comp.companySector
+       WHERE Comp.companySector IS NULL;
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+create or replace view Q14(Code, BeginPrice, EndPrice, Change, Gain) as
+SELECT resultDayOne.minCode as Code,
+       resultDayOne.firstPrice,
+       resultFinalDay.lastPrice,
+       resultFinalDay.lastPrice - resultDayOne.firstPrice,
+       (resultFinalDay.lastPrice - resultDayOne.firstPrice)/resultDayOne.firstPrice * 100 as Gain
+  FROM (SELECT res.*
+        FROM(SELECT DISTINCT
+               minimal.Code as minCode,
+               MIN(minimal."Date") OVER (PARTITION BY minimal.code) as firstDay,
+               minimal.price as firstPrice
+        FROM asx minimal) res
+      INNER JOIN asx original
+          ON original.code = res.minCode
+          AND original."Date" = res.firstDay
+          AND original.price = res.firstPrice) resultDayOne
+  JOIN (SELECT res2.*
+        FROM(SELECT DISTINCT
+               maximal.Code as lastCode,
+               MAX(maximal."Date") OVER (PARTITION BY maximal.code) as lastDay,
+               maximal.price as lastPrice
+        FROM asx maximal) res2
+      INNER JOIN asx original
+          ON original.code = res2.lastCode
+          AND original."Date" = res2.lastDay
+          AND original.price = res2.lastPrice) resultFinalDay
+  ON resultFinalDay.lastCode = resultDayOne.minCode
+  ORDER BY Gain desc, Code asc;
 
-   RIGHT OUTER JOIN category originalCategory
-       ON originalCategory.sector not in (select companySector from comp)
-   JOIN company originalCompany
-       ON originalCompany.country = 'Australia'
-       AND originalCompany.code = originalCategory.code;
+  create or replace view Q15(Code, MinPrice, AvgPrice, MaxPrice, MinDayGain, AvgDayGain, MaxDayGain) as
+
 
 -- create or replace view test(Sector, country, code, OutsideAustralia) as
 --   SELECT comp.*
