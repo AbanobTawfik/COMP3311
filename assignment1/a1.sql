@@ -1,3 +1,4 @@
+-- 1.List all the company names (and countries) that are incorporated outside Australia.
 create or replace view Q1(Name, Country) as
   SELECT Name, Country
   FROM company
@@ -164,6 +165,151 @@ create or replace view Q15(Code, MinPrice, AvgPrice, MaxPrice, MinDayGain, AvgDa
         FROM asx) result
   WHERE result."Date" != (SELECT MIN("Date") from asx)
   GROUP by result.code;
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+create or replace function executiveCheckTrigger() returns trigger
+as $$
+declare
+      execName text;
+      execCount integer;
+      execCode char(3);
+BEGIN
+    select COUNT(person) from executive WHERE person = new.person INTO execCount;
+    select Code from executive WHERE new.person = person INTO execCode;
+    select person from executive where new.person = person INTO execName;
+    if execCount > 1
+    then raise exception '% is already an executive for  %.',execName,execCode;
+    end if;
+  return new;
+END; $$ language plpgsql;
+
+
+CREATE TRIGGER Q16
+AFTER insert OR UPDATE ON executive
+FOR EACH ROW EXECUTE PROCEDURE executiveCheckTrigger();
+INSERT INTO Executive VALUES('AAD', 'Mr. Neil R. Balnaves ssssss');
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+create or replace view gainView(Minim, Maxim, gainDay, gainSector) as
+SELECT ret.minim as minim,
+       ret.maxim as maxim,
+       ret."Date" as gainDay,
+       ret.sector as gainSector
+  FROM ( SELECT DISTINCT MIN(result.gain) OVER (PARTITION BY cat.sector,result."Date") as minim,
+                MAX(result.gain) OVER (PARTITION BY cat.sector,result."Date") as maxim,
+                result."Date",
+                cat.sector
+         FROM (SELECT "Date",
+               code,
+               (price - LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date")),
+               ((price -
+                 LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date")) /
+                LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date") * 100) as gain
+        FROM asx) result
+  JOIN "category" cat ON cat.code = result.code
+  WHERE result."Date" != (SELECT MIN("Date") from asx)) ret;
+
+create or replace function starUpdateTrigger() returns trigger
+as $$
+declare
+      highestGain float;
+      lowestGain float;
+      companyGain float;
+      companyName text;
+BEGIN
+
+    SELECT Minim
+    from gainView gains
+    JOIN "category" cat
+             on new.code = cat.code
+             and cat.sector = gains.gainSector into highestGain;
+
+    SELECT Maxim
+    from gainView gains
+    JOIN "category" cat
+             on new.code = cat.code
+             and cat.sector = gains.gainSector into lowestGain;
+
+    SELECT gain
+    from Q7 dailyTrades
+    Where new.code = dailyTrades.Code
+    AND new."Date" = dailyTrades."Date" INTO companyGain;
+
+    SELECT "name"
+    from company
+    WHERE company.code = new.code into companyName;
+
+    if companyGain >= highestGain
+    THEN UPDATE rating
+        SET star = 5
+        WHERE code = new.code;
+        raise notice '% has increased to 5 star rating!', companyName;
+    END IF;
+    if lowestGain >= companyGain
+    THEN UPDATE rating
+        SET star = 1
+        WHERE code = new.code;
+        raise notice '% has decreased to 1 star rating!', companyName;
+    END IF;
+    raise notice '% has been added to the asx table', companyName;
+  return new;
+END; $$ language plpgsql;
+
+CREATE TRIGGER Q17
+AFTER insert OR UPDATE ON asx
+FOR EACH ROW EXECUTE PROCEDURE starUpdateTrigger();
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+create or replace function updateASXLogTrigger() returns trigger
+as $$
+DECLARE
+    timeOfUpdate timestamp;
+    dateOfPreviousPrice date;
+    companyCode char(3);
+    previousVolume integer;
+    previousPrice numeric;
+BEGIN
+    timeOfUpdate := now();
+    dateOfPreviousPrice := old."Date";
+    companyCode := old.code;
+    previousVolume := old.volume;
+    previousPrice := old.price;
+    INSERT into asxlog values(timeOfUpdate,dateOfPreviousPrice,companyCode,
+                              previousVolume,previousPrice);
+  return new;
+END; $$ language plpgsql;
+
+CREATE TRIGGER Q18
+AFTER UPDATE ON asx
+FOR EACH ROW EXECUTE PROCEDURE updateASXLogTrigger();
+
+
+UPDATE ASX
+    SET price = 1
+    WHERE "Date" = '2012-03-08'
+    AND code = 'WOW'
+    AND volume = '3788100';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 -- create or replace view test(Sector, country, code, OutsideAustralia) as
