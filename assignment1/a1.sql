@@ -342,7 +342,6 @@ create or replace view Q13(Code, Name, Address, Zip, Sector) as
       -- and list the sector that they are in, as this sector will now be
       -- apart of the exclusion list
       -- only rows in the exclusion list sector will be returned
-  
       SELECT category1.sector AS companySector,
              company1.country AS companyAddress,
              company1.code AS invalidCodes
@@ -356,45 +355,80 @@ create or replace view Q13(Code, Name, Address, Zip, Sector) as
       )AS comp
   -- Now we will do an exclusion join by matching our first query of
   -- all companies in Australia with the condition that
-  -- the sector from the exclusion list is equivalent and that the sector 
+  -- the sector from the exclusion list is equivalent and that the sector
   -- is null, which will exclude the row that contains sector from exclusion
   -- list
   ON category_list.sector = comp.companySector
      WHERE Comp.companySector IS NULL;
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--                                Question 14                                 --
+--------------------------------------------------------------------------------
+
+-- Calculate stock gains based on their prices of the first trading day
+-- Dnd last trading day (i.e., the oldest "Date" and the most recent "Date"
+-- Of the records stored in the ASX table). Order your result by
+-- Gain in descending order and then by Code in ascending order.
+
+-- Similair to above this query requires multiple subqueries and joins
+-- In order to achieve the overall change and gain. First we have to
+-- Create a subquery to make a view which has the price of the company
+-- From day one, next we want to create a subquery which has the price
+-- Of the company on the last day. finally we want to join with original table
+-- To perform a calculation based on the first and last price
 create or replace view Q14(Code, BeginPrice, EndPrice, Change, Gain) as
-SELECT resultDayOne.minCode as Code,
+SELECT resultDayOne.minCode AS Code,
        resultDayOne.firstPrice,
        resultFinalDay.lastPrice,
        resultFinalDay.lastPrice - resultDayOne.firstPrice,
        (resultFinalDay.lastPrice - resultDayOne.firstPrice)
-           /resultDayOne.firstPrice * 100 as Gain
+           /resultDayOne.firstPrice * 100 AS Gain
   FROM (SELECT res.*
+        -- this subquery will return a view that contains the price
+        -- day and code of the company from day one
         FROM(SELECT DISTINCT
-               minimal.Code as minCode,
-               MIN(minimal."Date") OVER (PARTITION BY minimal.code) as firstDay,
-               minimal.price as firstPrice
+               minimal.Code AS minCode,
+               MIN(minimal."Date") OVER (PARTITION BY minimal.code) AS firstDay,
+               minimal.price AS firstPrice
         FROM asx minimal) res
-      INNER JOIN asx original
-          ON original.code = res.minCode
-          AND original."Date" = res.firstDay
-          AND original.price = res.firstPrice) resultDayOne
+             -- now we want to join with the original asx table to
+             -- get the right values where all match
+             INNER JOIN asx original
+                        ON original.code = res.minCode
+                           AND original."Date" = res.firstDay
+                           AND original.price = res.firstPrice) resultDayOne
+  -- now we want to join with a subquery which will return a view that
+  -- contains the price, day and code of the company from the last day
+  -- this is the exact same as above just max not min
   JOIN (SELECT res2.*
         FROM(SELECT DISTINCT
-               maximal.Code as lastCode,
-               MAX(maximal."Date") OVER (PARTITION BY maximal.code) as lastDay,
-               maximal.price as lastPrice
+               maximal.Code AS lastCode,
+               MAX(maximal."Date") OVER (PARTITION BY maximal.code) AS lastDay,
+               maximal.price AS lastPrice
         FROM asx maximal) res2
-      INNER JOIN asx original
-          ON original.code = res2.lastCode
-          AND original."Date" = res2.lastDay
-          AND original.price = res2.lastPrice) resultFinalDay
-  ON resultFinalDay.lastCode = resultDayOne.minCode
-  ORDER BY Gain desc, Code asc;
+             INNER JOIN asx original
+                        ON original.code = res2.lastCode
+                        AND original."Date" = res2.lastDay
+                        AND original.price = res2.lastPrice) resultFinalDay
+        ON resultFinalDay.lastCode = resultDayOne.minCode
+  -- order the results by gain and then code
+  ORDER BY Gain DESC, Code ASC;
 
+--------------------------------------------------------------------------------
+--                                Question 15                                 --
+--------------------------------------------------------------------------------
+
+-- For all the trading records in the ASX table, produce the following
+-- Statistics as a database view (where Gain is measured in percentage).
+-- AvgDayGain is defined as the summation of all the daily gains (in percentage)
+-- Then divided by the number of trading days (as noted above, the total number
+-- Of days here should exclude the first trading day).
+
+-- This query is very similair to the query in question 7 and has a
+-- Almost exact approach. To make the query not reliant on other views
+-- I will be performing the exact same query as i did on q7 in here
+-- Then i will simply find the max/min/avg for price and gain
+-- For each company grouped by code.
 create or replace view Q15(Code, MinPrice, AvgPrice, MaxPrice, MinDayGain, AvgDayGain, MaxDayGain) as
   SELECT result.code,
          MIN(result.price),
@@ -403,6 +437,7 @@ create or replace view Q15(Code, MinPrice, AvgPrice, MaxPrice, MinDayGain, AvgDa
          MIN(result.gain),
          AVG(result.gain),
          MAX(result.gain)
+  -- this is the exact same query as Q7
   FROM (SELECT "Date",
                code,
                volume,
@@ -411,110 +446,226 @@ create or replace view Q15(Code, MinPrice, AvgPrice, MaxPrice, MinDayGain, AvgDa
                (price - LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date")),
                ((price -
                  LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date")) /
-                LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date") * 100) as gain
+                LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date") * 100) AS gain
         FROM asx) result
-  WHERE result."Date" != (SELECT MIN("Date") from asx)
+  -- exclude the first day of trading (since first day cannot calculate gain
+  WHERE result."Date" != (SELECT MIN("Date") FROM asx)
   GROUP by result.code;
+
 --------------------------------------------------------------------------------
+--                                Question 16                                 --
 --------------------------------------------------------------------------------
---------------------------------------------------------------------------------
+
+-- Create a trigger on the Executive table, to
+-- Check and disallow any insert or update of a Person in the Executive table
+-- To be an executive of more than one company.
+
+-- First we will make our function with returns a trigger, that will
+-- Check how many companies the person we are inserting is executive for.
+-- the function will raise an exception if the person is already an Executive
+-- For another company. otherwise it will do nothing and return.
+-- This will be applied to every row in our executive table
 create or replace function executiveCheckTrigger() returns trigger
 as $$
+-- we are going to declare all variables requires for our check and our
+-- error messages
 declare
       execName text;
       execCount integer;
       execCode char(3);
 BEGIN
-    select COUNT(person) from executive WHERE person = new.person INTO execCount;
-    select Code from executive WHERE new.person = person INTO execCode;
-    select person from executive where new.person = person INTO execName;
-    if execCount > 1
-    then raise exception '% is already an executive for  %.',execName,execCode;
-    end if;
+    -- first we want to count how many companies a person is executive for
+    SELECT COUNT(person) FROM executive WHERE person = new.person INTO execCount;
+    -- next we want to get the name and code for the person we are making
+    -- executive of another company
+    SELECT Code FROM executive WHERE new.person = person INTO execCode;
+    SELECT person FROM executive WHERE new.person = person INTO execName;
+    -- if the person is an executive for more than 1 company then we
+    -- want to raise exception to disallow and also alert user with
+    -- error message that "(person) is already executive for (company)"
+    IF execCount > 1
+    THEN RAISE EXCEPTION '% is already an executive for  %.',execName,execCode;
+    END IF;
   return new;
 END; $$ language plpgsql;
 
-
+-- Now we want to create a trigger that applies on any insertion/update On
+-- The executive table for each row, it will apply the function above that
+-- disallows a person to be a executive for more than 1 company
 CREATE TRIGGER Q16
-AFTER insert OR UPDATE ON executive
+AFTER INSERT OR UPDATE ON executive
 FOR EACH ROW EXECUTE PROCEDURE executiveCheckTrigger();
-INSERT INTO Executive VALUES('AAD', 'Mr. Neil R. Balnaves ssssss');
+
+-- quick test
+-- INSERT INTO Executive VALUES('AAD', 'Mr. Neil R. Balnaves ssssss');
+
 --------------------------------------------------------------------------------
+--                                Question 17                                 --
 --------------------------------------------------------------------------------
---------------------------------------------------------------------------------
+
+-- Suppose more stock trading data are incoming into the ASX table.
+-- Create a trigger to increase the stock's rating (as Star's) to 5
+-- When the stock has made a maximum daily price gain
+-- (when compared with the price on the previous trading day)
+-- In percentage within its sector. For example, for a given day
+-- And a given sector, if Stock A has the maximum price gain in the sector,
+-- Its rating should then be updated to 5.
+-- If it happens to have more than one stock with the same maximum price gain,
+-- Update all these stocks' ratings to 5.
+-- Otherwise, decrease the stock's rating to 1 when the stock has performed
+-- The worst in the sector in terms of daily percentage price gain.
+-- If there are more than one record of rating for a given stock that need to be
+-- Updated, update (not insert) all these records.
+-- You may assume that there are at least two trading records for each stock
+-- In the existing ASX table,
+-- And do not worry about the case that when the ASX table is initially empty.
+
+-- This is a much more complicated procedure than the previous trigger.
+-- First we need to create a view that has:
+-- The date, sector, maximum gain for that sector, minimum gain for that sector
+-- For each day in the ASX table.
+-- Next we want to make a function for our trigger which will check the
+-- Insertion/update to the ASX log to compare it to the maximum and minimum gain
+-- For that day and sector. It will then change the rating for that company
+-- IF the rating is more than the current max or lower than the current min
+
+-- This query will create a view used for our function which contains
+-- The maximum gain/minimum gain, sector and day for each day and sector
 create or replace view gainView(Minim, Maxim, gainDay, gainSector) as
-SELECT ret.minim as minim,
-       ret.maxim as maxim,
-       ret."Date" as gainDay,
-       ret.sector as gainSector
-  FROM ( SELECT DISTINCT MIN(result.gain) OVER (PARTITION BY cat.sector,result."Date") as minim,
-                MAX(result.gain) OVER (PARTITION BY cat.sector,result."Date") as maxim,
+SELECT ret.minim AS minim,
+       ret.maxim AS maxim,
+       ret."Date" AS gainDay,
+       ret.sector AS gainSector
+  -- To do this we will want to perform a query on our subquery
+  -- we want to use the same query on q7 (will just be reusing the code)
+  -- to avoid creating multiple dependancies on more views. Then we will
+  -- select the max/min for each sector and day from that query as our
+  -- final subquery. Finally we want to join this with our category table
+  -- to get the sectory of the company and exclude the first day
+  FROM (SELECT DISTINCT
+                -- we obtain our maximum and minimum over sector and day
+                MIN(result.gain) OVER (PARTITION BY cat.sector,result."Date") AS minim,
+                MAX(result.gain) OVER (PARTITION BY cat.sector,result."Date") AS maxim,
                 result."Date",
                 cat.sector
-         FROM (SELECT "Date",
+         FROM (SELECT
+               "Date",
                code,
                (price - LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date")),
                ((price -
                  LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date")) /
-                LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date") * 100) as gain
+                LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date") * 100) AS gain
         FROM asx) result
   JOIN "category" cat ON cat.code = result.code
-  WHERE result."Date" != (SELECT MIN("Date") from asx)) ret;
+  WHERE result."Date" != (SELECT MIN("Date") FROM asx)) ret;
 
+-- This function will be used alongside the gainView view to perform the
+-- Functionallity of the trigger required.
 create or replace function starUpdateTrigger() returns trigger
 as $$
+-- Declare the maximum and minimum on the day we are inserting/updating
+-- And also the gain/name of the company we are inserting/updating
 declare
       highestGain float;
       lowestGain float;
       companyGain float;
       companyName text;
 BEGIN
-
+    -- we want to get the minimum gain for the day and sector
+    -- using our gainView by matching the company to the sector
+    -- then matching the sector to the gainview row which has
+    -- the same date
+    -- we will insert the minimum into our variable lowest gain
     SELECT Minim
-    from gainView gains
+    FROM gainView gains
     JOIN "category" cat
-             on new.code = cat.code
-             and cat.sector = gains.gainSector into highestGain;
+             ON new.code = cat.code
+             AND cat.sector = gains.gainSector
+             AND gains.gainDay = new."Date" INTO lowestGain;
 
+    -- we want to perform the exact same operation as above
+    -- to find the maximum instead in the exact same procedure
+    -- and insert that into the highest gain variable
     SELECT Maxim
-    from gainView gains
+    FROM gainView gains
     JOIN "category" cat
-             on new.code = cat.code
-             and cat.sector = gains.gainSector into lowestGain;
+             ON new.code = cat.code
+             AND cat.sector = gains.gainSector
+             AND gains.gainDay = new."Date" INTO highestGain;
 
+    -- next we want to check our query from Q7 to see the updated/inserted
+    -- gain as a comparison point and insert that into the variable companyGain
     SELECT gain
-    from Q7 dailyTrades
-    Where new.code = dailyTrades.Code
+    FROM Q7 dailyTrades
+    WHERE new.code = dailyTrades.Code
     AND new."Date" = dailyTrades."Date" INTO companyGain;
 
+    -- finally we want to insert the company name into the company name variable
+    -- for the messages
     SELECT "name"
-    from company
+    FROM company
     WHERE company.code = new.code into companyName;
 
-    if companyGain >= highestGain
+    -- if the company has gained more than or equal
+    -- to the maximum gain for that day
+    -- and sector
+    IF companyGain >= highestGain
+    -- then we want to update that company to 5 star rating
+    -- and inform that the company has increased to a 5 star rating
     THEN UPDATE rating
         SET star = 5
         WHERE code = new.code;
-        raise notice '% has increased to 5 star rating!', companyName;
+        RAISE NOTICE '% has increased to 5 star rating!', companyName;
     END IF;
-    if lowestGain >= companyGain
+
+    -- if the company has gained less than or equal to the lowest gain
+    -- for that day and sector
+    IF lowestGain >= companyGain
+    -- then we want to update that company to 1 star rating
+    -- and inform that the company has increased to a 1 star rating
     THEN UPDATE rating
         SET star = 1
         WHERE code = new.code;
-        raise notice '% has decreased to 1 star rating!', companyName;
+        RAISE NOTICE '% has decreased to 1 star rating!', companyName;
     END IF;
-    raise notice '% has been added to the asx table', companyName;
-  return new;
+    -- otherwise we will notify no changes has occured to the rating
+    RAISE NOTICE '% has been added/updated to the asx table', companyName;
+  RETURN new;
 END; $$ language plpgsql;
 
+-- Now we want to create a trigger that applies on any insertion/update On
+-- The asx table for each row, it will apply the function above that
+-- will change the ratings if the company has gained more than the maximum
+-- gain for that sector on that day, or the lower than the minimum gain for that
+-- sector on that day
 CREATE TRIGGER Q17
-AFTER insert OR UPDATE ON asx
+AFTER INSERT OR UPDATE ON asx
 FOR EACH ROW EXECUTE PROCEDURE starUpdateTrigger();
+
 --------------------------------------------------------------------------------
+--                                Question 18                                 --
 --------------------------------------------------------------------------------
---------------------------------------------------------------------------------
+
+-- Stock price and trading volume data are usually incoming data and
+-- Seldom involve updating existing data. However, updates are allowed in
+-- Order to correct data errors. All such updates (instead of data insertion)
+-- Are logged and stored in the ASXLog table.
+-- Create a trigger to log any updates on Price and/or Voume in the ASX table
+-- And log these updates (only for update, not inserts) into the ASXLog table.
+-- Here we assume that Date and Code cannot be corrected and will be the same
+-- As their original, old values. Timestamp is the date and time
+-- That the correction takes place.
+-- Note that it is also possible that a record is corrected more than once,
+-- i.e., same Date and Code but different Timestamp.
+
+-- This is a much simpler procedure where we simply create a function that
+-- Will insert the timestamp, date, company, volume before update, price before
+-- Update, into the asxlog table. this function will return a trigger that
+-- Occurs on any update on the asx table
 create or replace function updateASXLogTrigger() returns trigger
 as $$
+-- We want to declare all values whichw ill be used in the columns of the
+-- asxlog table based on updated asx row
 DECLARE
     timeOfUpdate timestamp;
     dateOfPreviousPrice date;
@@ -522,24 +673,37 @@ DECLARE
     previousVolume integer;
     previousPrice numeric;
 BEGIN
+    -- now we want to set the timestamp to 
+    -- reference for which i found out that now returns timestamp
+    -- https://stackoverflow.com/questions/4411311/getting-timestamp-using-mysql
     timeOfUpdate := now();
+    -- next we want to get the data from the row before the update occurs
     dateOfPreviousPrice := old."Date";
     companyCode := old.code;
     previousVolume := old.volume;
     previousPrice := old.price;
-    INSERT into asxlog values(timeOfUpdate,dateOfPreviousPrice,companyCode,
+    -- insert our values into the asxlog table
+    INSERT INTO asxlog VALUES(timeOfUpdate,dateOfPreviousPrice,companyCode,
                               previousVolume,previousPrice);
-    raise notice 'changes to % have been logged', companyCode;
-  return new;
+    -- notify the user that changes have been logged
+    RAISE NOTICE 'changes to % have been logged', companyCode;
+  RETURN new;
 END; $$ language plpgsql;
 
+-- Now we want to create a trigger that applies on any update (only update!) On
+-- The asx table for each row, it will apply the function above that
+-- will log all the changes in price and volume into the asxlog table.
 CREATE TRIGGER Q18
 AFTER UPDATE ON asx
 FOR EACH ROW EXECUTE PROCEDURE updateASXLogTrigger();
 
+-- quick test for q17/q18
 
 -- UPDATE ASX
 --     SET price = 1
 --     WHERE "Date" = '2012-03-08'
 --     AND code = 'WOW'
 --     AND volume = '3788100';
+--------------------------------------------------------------------------------
+--                                FINISHED                                    --
+--------------------------------------------------------------------------------
