@@ -615,7 +615,7 @@ BEGIN
     THEN UPDATE rating
         SET star = 5
         WHERE code = new.code;
-        RAISE MESSAGE '% has increased to 5 star rating!', companyName;
+        RAISE NOTICE '% has increased to 5 star rating!', companyName;
     END IF;
 
     -- if the company has gained less than or equal to the lowest gain
@@ -626,10 +626,10 @@ BEGIN
     THEN UPDATE rating
         SET star = 1
         WHERE code = new.code;
-        RAISE MESSAGE '% has decreased to 1 star rating!', companyName;
+        RAISE NOTICE '% has decreased to 1 star rating!', companyName;
     END IF;
     -- otherwise we will notify no changes has occured to the rating
-    RAISE MESSAGE '% has been added/updated to the asx table', companyName;
+    RAISE NOTICE '% has been added/updated to the asx table', companyName;
   RETURN new;
 END; $$ language plpgsql;
 
@@ -686,7 +686,7 @@ BEGIN
     INSERT INTO asxlog VALUES(timeOfUpdate,dateOfPreviousPrice,companyCode,
                               previousVolume,previousPrice);
     -- notify the user that changes have been logged
-    RAISE MESSAGE 'changes to % have been logged', companyCode;
+    RAISE NOTICE 'changes to % have been logged', companyCode;
   RETURN new;
 END; $$ language plpgsql;
 
