@@ -673,7 +673,7 @@ DECLARE
     previousVolume integer;
     previousPrice numeric;
 BEGIN
-    -- now we want to set the timestamp to 
+    -- now we want to set the timestamp to
     -- reference for which i found out that now returns timestamp
     -- https://stackoverflow.com/questions/4411311/getting-timestamp-using-mysql
     timeOfUpdate := now();
