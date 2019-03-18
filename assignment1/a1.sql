@@ -145,7 +145,7 @@ create or replace view Q7("Date", Code, Volume, PrevPrice, Price, Change, Gain) 
                -- By grouping the rows by the company code, and taking the order
                -- From date, this allows us to pick the previous price
                LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date"),
-               price,
+               price as previous_price,
                -- This calculation takes the change by the following
                -- Change = current price - old price
                (price - LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date")),
@@ -157,7 +157,8 @@ create or replace view Q7("Date", Code, Volume, PrevPrice, Price, Change, Gain) 
         FROM asx) result
   -- We exclude the first day of trading since we cannot workout previous
   -- Data from the very first day
-  WHERE result."Date" != (SELECT MIN("Date") FROM asx);
+  WHERE result."Date" != (SELECT MIN("Date") FROM asx)
+        AND result.previous_price IS NOT NULL;
 
 --------------------------------------------------------------------------------
 --                                Question 8                                  --
