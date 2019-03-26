@@ -1,7 +1,6 @@
 #!/bin/sh
 
-ssh grieg
-source /srvr/whoami/env
+source /srvr/$(whoami)/env
 
 pgs start
 dropdb a1-check > output.txt
