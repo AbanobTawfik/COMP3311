@@ -449,8 +449,6 @@ create or replace view Q15(Code, MinPrice, AvgPrice, MaxPrice, MinDayGain, AvgDa
                  LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date")) /
                 LAG(price, 1) OVER (PARTITION BY code ORDER BY "Date") * 100) AS gain
         FROM asx) result
-  -- exclude the first day of trading (since first day cannot calculate gain
-  WHERE result."Date" != (SELECT MIN("Date") FROM asx)
   GROUP by result.code;
 
 --------------------------------------------------------------------------------
