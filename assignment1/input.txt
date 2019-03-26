@@ -1,0 +1,46 @@
+select * from Q1;
+select * from Q2;
+select * from Q3;
+select * from Q4;
+select count(Name) from Q5;
+select count(Name) from Q6;
+select * from Q7 limit 10;
+select * from Q8 limit 10;
+select * from Q9 limit 10;
+select * from Q10 limit 10;
+select * from Q11 limit 10;
+select * from Q12 limit 10;
+select count(*) from Q13;
+select * from Q14 limit 10;
+select * from Q15 limit 10;
+INSERT INTO executive VALUES('ABC', 'Mr. Neil R. Balnaves AO');
+INSERT INTO ASX VALUES('2013-01-04','ASX','49760000','400000000.03');
+select * from Q11;
+UPDATE ASX
+     SET price = 1
+     WHERE "Date" = '2012-03-08'
+     AND code = 'WOW'
+     AND volume = '3788100';
+UPDATE ASX
+     SET price = 1
+     WHERE "Date" = '2012-03-08'
+     AND code = 'WOW'
+     AND volume = '3788100';
+UPDATE ASX
+     SET price = 1
+     WHERE "Date" = '2012-03-08'
+     AND code = 'WOW'
+     AND volume = '3788100';
+UPDATE ASX
+     SET price = 1
+     WHERE "Date" = '2012-03-08'
+     AND code = 'WOW'
+     AND volume = '3788100';
+UPDATE ASX
+     SET price = 1
+     WHERE "Date" = '2012-03-08'
+     AND code = 'WOW'
+     AND volume = '3788100';  
+
+select * from Q11;
+select * from asxlog;
