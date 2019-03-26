@@ -46,3 +46,4 @@ UPDATE ASX
 
 select * from Q11;
 select * from asxlog;
+select * from rating where code = 'ASX' or code = 'ANZ' or code = 'ABP' or code = 'WOW';
