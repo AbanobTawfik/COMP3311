@@ -12,4 +12,5 @@ psql a1-check -f asx-insert.sql
 psql a1-check -f a1.sql
 psql -d a1-check -f input.txt >> output.txt
 cat output.txt
+dropdb a1-check > output.txt
 pgs stop
