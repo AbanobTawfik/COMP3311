@@ -1,0 +1,202 @@
+                 name                 |     country      
+--------------------------------------+------------------
+ Aquarius Platinum Ltd                | Bermuda
+ Boart Longyear Ltd                   | United States
+ Coalspur Mines Ltd.                  | Canada
+ Fletcher Building Ltd.               | New Zealand
+ Henderson Group PLC                  | United Kingdom
+ James Hardie Industries PLC          | Ireland
+ Oil Search Limited                   | Papua New Guinea
+ ResMed Inc.                          | United States
+ Sims Metal Management Ltd.           | United States
+ Singapore Telecommunications Limited | Singapore
+(10 rows)
+
+ code 
+------
+(0 rows)
+
+                 name                 
+--------------------------------------
+ Computershare Limited
+ Carsales.com Limited
+ IRESS Limited
+ M2 Telecommunications Group Limited
+ Seek Limited
+ Singapore Telecommunications Limited
+ SMS Management & Technology Limited
+ Telstra Corp Ltd
+ TPG Telecom Ltd.
+ Wotif.com Holdings Limited
+(10 rows)
+
+      sector      | number 
+------------------+--------
+ Basic Materials  |     11
+ Consumer Goods   |      6
+ Financial        |     11
+ Healthcare       |      4
+ Industrial Goods |      5
+ Services         |     18
+ Technology       |      4
+ Utilities        |      3
+(8 rows)
+
+ count 
+-------
+    50
+(1 row)
+
+ count 
+-------
+    14
+(1 row)
+
+    Date    | code | volume  | prevprice | price | change |          gain           
+------------+------+---------+-----------+-------+--------+-------------------------
+ 2012-01-04 | AAD  |  766300 |      0.91 |  0.92 |   0.01 |  1.09890109890109890100
+ 2012-01-05 | AAD  |  693800 |      0.92 |  0.91 |  -0.01 | -1.08695652173913043500
+ 2012-01-06 | AAD  |  741800 |      0.91 |  0.90 |  -0.01 | -1.09890109890109890100
+ 2012-01-09 | AAD  |  663900 |      0.90 |  0.89 |  -0.01 | -1.11111111111111111100
+ 2012-01-10 | AAD  |  521500 |      0.89 |  0.89 |   0.00 |      0.0000000000000000
+ 2012-01-11 | AAD  |  441900 |      0.89 |  0.92 |   0.03 |  3.37078651685393258400
+ 2012-01-12 | AAD  |  382300 |      0.92 |  0.91 |  -0.01 | -1.08695652173913043500
+ 2012-01-13 | AAD  |  388900 |      0.91 |  0.90 |  -0.01 | -1.09890109890109890100
+ 2012-01-16 | AAD  |  391700 |      0.90 |  0.90 |   0.00 |      0.0000000000000000
+ 2012-01-17 | AAD  | 1503600 |      0.90 |  0.92 |   0.02 |  2.22222222222222222200
+(10 rows)
+
+    Date    | code |  volume  
+------------+------+----------
+ 2012-01-03 | TLS  | 20907600
+ 2012-01-04 | TLS  | 45022300
+ 2012-01-05 | TLS  | 38345400
+ 2012-01-06 | TLS  | 40064600
+ 2012-01-09 | TLS  | 35545400
+ 2012-01-10 | TLS  | 41917900
+ 2012-01-11 | TLS  | 80869900
+ 2012-01-12 | TLS  | 46855400
+ 2012-01-13 | TLS  | 35368600
+ 2012-01-16 | TLS  | 41689400
+(10 rows)
+
+     sector      |            industry            | number 
+-----------------+--------------------------------+--------
+ Basic Materials | Agricultural Chemicals         |      2
+ Basic Materials | Aluminum                       |      1
+ Basic Materials | Copper                         |      9
+ Basic Materials | Gold                           |     13
+ Basic Materials | Independent Oil & Gas          |      8
+ Basic Materials | Industrial Metals & Minerals   |     17
+ Basic Materials | Major Integrated Oil & Gas     |      1
+ Basic Materials | Oil & Gas Equipment & Services |      2
+ Basic Materials | Oil & Gas Refining & Marketing |      1
+ Basic Materials | Specialty Chemicals            |      1
+(10 rows)
+
+ code |            industry            
+------+--------------------------------
+ AMC  | Packaging & Containers
+ AMP  | Life Insurance
+ ASX  | Mortgage Investment
+ AWC  | Aluminum
+ CCL  | Beverages - Soft Drinks
+ CQR  | REIT - Retail
+ CTX  | Oil & Gas Refining & Marketing
+ CWN  | Resorts & Casinos
+ FWD  | Lodging
+ FXJ  | Publishing - Newspapers
+(10 rows)
+
+      sector      |     avgrating      
+------------------+--------------------
+ Utilities        | 3.0000000000000000
+ Healthcare       | 3.0000000000000000
+ Industrial Goods | 3.0000000000000000
+ Services         | 3.0000000000000000
+ Technology       | 3.0000000000000000
+ Basic Materials  | 3.0000000000000000
+ Consumer Goods   | 3.0000000000000000
+ Financial        | 3.0000000000000000
+(8 rows)
+
+          name          
+------------------------
+ Mr. Paul Altschwager
+ Mr. David John Southon
+(2 rows)
+
+ count 
+-------
+    44
+(1 row)
+
+ code | beginprice | endprice | change |           gain           
+------+------------+----------+--------+--------------------------
+ BRU  |       1.25 |     3.22 |   1.97 | 157.60000000000000000000
+ NWH  |       2.26 |     3.65 |   1.39 |  61.50442477876106194700
+ GFF  |       0.42 |     0.66 |   0.24 |  57.14285714285714285700
+ BBG  |       1.79 |     2.78 |   0.99 |  55.30726256983240223500
+ MAH  |       0.53 |     0.82 |   0.29 |  54.71698113207547169800
+ IMD  |       1.89 |     2.92 |   1.03 |  54.49735449735449735400
+ AWE  |       1.31 |     2.00 |   0.69 |  52.67175572519083969500
+ BLY  |       2.76 |     4.00 |   1.24 |  44.92753623188405797100
+ KAR  |       4.57 |     6.51 |   1.94 |  42.45076586433260393900
+ SUL  |       5.08 |     7.22 |   2.14 |  42.12598425196850393700
+(10 rows)
+
+ code | minprice |        avgprice        | maxprice |       mindaygain        |       avgdaygain       |       maxdaygain        
+------+----------+------------------------+----------+-------------------------+------------------------+-------------------------
+ AAD  |     0.89 | 0.96209677419354838710 |     1.04 | -3.84615384615384615400 | 0.14740176246698544198 |  3.37078651685393258400
+ ABC  |     2.58 |     2.6985483870967742 |     2.79 | -2.23880597014925373100 | 0.04329031960988776811 |  3.38345864661654135300
+ ABP  |     1.72 |     1.7870000000000000 |     1.91 | -2.23463687150837988800 | 0.09550372562355037383 |  3.84615384615384615400
+ ACR  |     2.93 |     3.5641935483870968 |     4.06 | -3.44827586206896551700 | 0.51856981194522577211 |  9.30232558139534883700
+ AGK  |    12.87 |    13.6619354838709677 |    14.33 | -4.66666666666666666700 | 0.07970605416265374490 |  2.50922509225092250900
+ AGO  |     2.66 |     2.9325806451612903 |     3.18 | -4.87012987012987013000 | 0.04787365766871657087 |  5.20833333333333333300
+ AIO  |     4.41 |     4.6211290322580645 |     4.86 | -2.92887029288702928900 | 0.10930006358784091445 |  3.32594235033259423500
+ ALL  |     2.13 |     2.5450000000000000 |     3.00 | -4.67625899280575539600 | 0.52979530259853538047 | 13.93442622950819672100
+ ALZ  |     2.26 |     2.3877419354838710 |     2.46 | -2.52100840336134453800 | 0.09086195876697744994 |  3.38983050847457627100
+ AMC  |     6.35 |     6.6258064516129032 |     7.06 | -2.85714285714285714300 | 0.08422744343719506985 |  3.89408099688473520200
+(10 rows)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+      sector      |     avgrating      
+------------------+--------------------
+ Financial        | 3.0740740740740741
+ Services         | 3.0000000000000000
+ Technology       | 3.0000000000000000
+ Basic Materials  | 3.0000000000000000
+ Consumer Goods   | 3.0000000000000000
+ Industrial Goods | 3.0000000000000000
+ Utilities        | 3.0000000000000000
+ Healthcare       | 3.0000000000000000
+(8 rows)
+
+UPDATE 1
+UPDATE 1
+UPDATE 1
+UPDATE 1
+UPDATE 1
+      sector      |     avgrating      
+------------------+--------------------
+ Financial        | 3.0740740740740741
+ Services         | 3.0000000000000000
+ Technology       | 3.0000000000000000
+ Basic Materials  | 3.0000000000000000
+ Consumer Goods   | 3.0000000000000000
+ Industrial Goods | 3.0000000000000000
+ Utilities        | 3.0000000000000000
+ Healthcare       | 3.0000000000000000
+(8 rows)
+
+         Timestamp          |    Date    | code | oldvolume | oldprice 
+----------------------------+------------+------+-----------+----------
+ 2019-03-26 21:30:41.778921 | 2012-03-08 | WOW  |   3788100 |    23.30
+ 2019-03-26 21:30:41.780451 | 2012-03-08 | WOW  |   3788100 |        1
+ 2019-03-26 21:30:41.781357 | 2012-03-08 | WOW  |   3788100 |        3
+ 2019-03-26 21:30:41.782267 | 2012-03-08 | WOW  |   3788100 |        4
+ 2019-03-26 21:30:41.783176 | 2012-03-08 | WOW  |   3788100 |        5
+(5 rows)
+
