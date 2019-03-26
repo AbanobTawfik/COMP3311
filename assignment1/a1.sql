@@ -640,7 +640,7 @@ END; $$ language plpgsql;
 -- gain for that sector on that day, or the lower than the minimum gain for that
 -- sector on that day
 CREATE TRIGGER Q17
-AFTER INSERT OR UPDATE ON asx
+AFTER UPDATE ON asx
 FOR EACH ROW EXECUTE PROCEDURE starUpdateTrigger();
 
 --------------------------------------------------------------------------------
