@@ -1,8 +1,7 @@
 #!/bin/sh
 
 ssh grieg
-read -s "zid: (include the z)" zid
-source /srvr/$zid/env
+source /srvr/whoami/env
 
 pgs start
 dropdb a1-check > output.txt
