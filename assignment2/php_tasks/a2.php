@@ -14,7 +14,22 @@ define("DB_CONNECTION","dbname=a2");
 // E.g., common constants, functions, etc.
 //
 
-
+function format_echo($table_value, $first, &$flag){
+	if (!$first && !empty($table_value)){
+	    if($flag){
+	    	echo "$table_value";
+	    	$flag = false;
+	    }else{  
+	      echo ", $table_value";
+	  	}
+   		return;
+    }
+	if($first && !empty($table_value)){
+		echo "$table_value";
+		$flag = false;
+		return;
+	}
+}
 
 
 ?>

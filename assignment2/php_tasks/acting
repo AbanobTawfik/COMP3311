@@ -24,11 +24,14 @@ $usage = "Usage: $argv[0] Actor";
 $db = dbConnect(DB_CONNECTION);
 
 // Check arguments
-if (count($argv) < 2) 
+if (count($argv) < 2){ 
   exit("$usage\n");
+}
 
 // Get the return results
 $actor = strtolower($argv[1]);
+// use a more efficient query than the one used in the view for database
+// significantly reduces search by limiting to actor
 $q = "SELECT actor_movie_id.actor_name,
            movie_list.title,
            director_list.name,
@@ -47,30 +50,41 @@ $q = "SELECT actor_movie_id.actor_name,
                     ON movie_list.id = rating_list.movie_id
          LEFT JOIN director director_list
                     ON director_list.id = movie_list.director_id
-    ORDER BY actor_movie_id.actor_name, movie_list.year;";
+    ORDER BY movie_list.year ASC, movie_list.title ASC;";
 $r = dbQuery($db, mkSQL($q, $actor));
 
-// Iterate through the results and print
+// Iterate through the results and print formatted
 $i = 1;
 while ($t = dbNext($r)) {
+  $comma_off = true;
+  $first = true;
   if(empty($t[3]) && empty($t[4]) && empty($t[5])){
-    if(empty($t[2]))
+    if(empty($t[2])){
       echo "$i. $t[1]";
-    else
+    }
+    else{
   	  echo "$i. $t[1] -- $t[2]";
-
+    }
   	continue;
   }
-  if(empty($t[2]))
+  if(empty($t[2])){
     echo "$i. $t[1] (";
-  else
+  }
+  else{
     echo "$i. $t[1] -- $t[2] (";
-  if (!empty($t[3]))
-    echo "$t[3], ";
-  if (!empty($t[4]))
-      echo "$t[4], ";
-  if(!empty($t[5]))
-  	  echo "$t[5]";
+  }
+
+  if (!empty($t[3])){
+    format_echo($t[3], true, $comma_off);
+  }
+  if (!empty($t[4])){
+    format_echo($t[4], false, $comma_off);
+  }
+  if(!empty($t[5])){
+    format_echo($t[5], false, $comma_off);
+
+  }
+  
   echo ")\n";
   $i++;
 }

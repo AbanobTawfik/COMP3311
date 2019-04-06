@@ -33,47 +33,142 @@ if (count($argv) != 4 && count($argv) != 5){
 	exit("$usage\n");
 }
 
+// If the program is run WITHOUT the optional genres arguement
+// we will then find the top rated movies from the time 
+// period specified and the amount specified.  
 if(count($argv) == 4){
-	if($argv[1] <= 1 || $argv[1] >= 1000)
+	// if we ask for more movies than is allowed by specification
+	// throw an error message
+	if($argv[1] <= 1 || $argv[1] >= 1000){
 		exit("1 >= amount >= 1000 !");
+	}
+	// If our date parameters fall out of bounds from the specification
+	// then we want to throw an error message
 	if($argv[2] < 1900 || $argv[2] > 2020 || $argv[3] < $argv[2]
-		|| $argv[3] > 2020)
+		|| $argv[3] > 2020){
 		exit("1900 < start_year <= end_year < 2020");
+	}
+	//run our query to select the top ranked movies 
 	$q = "select * from rankings order by rankings.score DESC, 
 		  rankings.number_of_reviews DESC;";
 	$r = dbQuery($db, mkSQL($q));
+	// variables for performing our filtering from query
 	$amount = $argv[1];
 	$start_year = $argv[2];
 	$end_year = $argv[3];
-	// Iterate through the results and print
+	// Iterate through the results and print formatted output
 	$i = 1;
 	while (($t = dbNext($r)) && $i < $amount + 1) {
+	  $comma_off_paranthesis = true;
+	  $comma_off_square_braces = true;
 	  if($t[2] >= $start_year && $t[2] <= $end_year && !empty($t[2])){
-		  if(empty($t[2]) && empty($t[3]) && empty($t[4]))
+		  if(empty($t[2]) && empty($t[3]) && empty($t[4])){
 		  	echo "$i. $t[1]";
-		  else
+		  }
+		  else{
 		  	echo "$i. $t[1] (";
-		  if (!empty($t[2]))
-		      echo "$t[2], ";
-		  if (!empty($t[3]))
-		      echo "$t[3], ";
-		  if(!empty($t[4]))
-		  	  echo "$t[4]) ";
-		  if(empty($t[5]) && empty($t[6]))
+		  }
+		  if (!empty($t[2])){
+	  		format_echo($t[2], true, $comma_off_paranthesis);
+		  }
+		  if (!empty($t[3])){
+	  		format_echo($t[3], false, $comma_off_paranthesis);
+		  }
+		  if(!empty($t[4])){
+	  		format_echo($t[4], false, $comma_off_paranthesis);
+		  }
+		  echo ") ";
+		  if(empty($t[5]) && empty($t[6])){
 		  	 continue;
+		  }
 		  else
 		  	 echo "[";
-		  if(!empty($t[5]))
-		  	  echo "$t[5], ";
-		  if(!empty($t[6]))
-		  	  echo "$t[6]";
+		  if(!empty($t[5])){
+	  		format_echo($t[5], true, $comma_off_square_braces);
+		  }
+		  if(!empty($t[6])){
+	  		format_echo($t[6], false, $comma_off_square_braces);
+		  }
 		  echo "]\n";
 		  $i++;
 	  }
 	}
 }
 
+// If the program is run WITH the optional genres arguement
+// we will then find the top rated movies from the time 
+// period specified and the amount specified where all the genres
+// passed in are contained within all genres of film printed.  
 if(count($argv) == 5){
-	
+	if($argv[2] <= 1 || $argv[2] >= 1000){
+		exit("1 >= amount >= 1000 !");
+	}
+	if($argv[3] < 1900 || $argv[3] > 2020 || $argv[4] < $argv[3]
+		|| $argv[4] > 2020){
+		exit("1900 < start_year <= end_year < 2020");
+	}
+	$q = "select * from rankings order by rankings.score DESC, 
+		  rankings.number_of_reviews DESC;";
+	$r = dbQuery($db, mkSQL($q));
+	$genre_match = $argv[1];
+	// here we try to get the array of genres sorted to do a direct
+	// comparison with the array of genres in the database
+	$sorted_genre_match = explode("&",$genre_match);
+	sort($sorted_genre_match);
+
+	$amount = $argv[2];
+	$start_year = $argv[3];
+	$end_year = $argv[4];
+	// Iterate through the results and print formatted
+	$i = 1;
+	while (($t = dbNext($r)) && $i < $amount + 1) {
+	  $comma_off_paranthesis = true;
+	  $comma_off_square_braces = true;
+	  if($t[2] >= $start_year && $t[2] <= $end_year && !empty($t[2])){
+	  	  if(empty($t[7])){
+	  	  	continue;
+	  	  }else{
+	  	  	// we want to get the list genres from the movie from our table
+	  	  	// next we want to store it in an array and sort the array 
+	  	  	$db_genre_match = $t[7];
+	  	  	$sorted_db_genre_match = explode("&",$db_genre_match);
+	  	  	sort($sorted_db_genre_match);
+	  	  	// if ALL the genres specified are found in the database we want to proccess
+	  	  	// the movie, otherwise we want to skip and go to the next movie.
+	  	  	if(!(count(array_diff($sorted_genre_match, $sorted_db_genre_match)) == 0)){
+	  	  		continue;
+	  	  	}
+	  	  }
+		  if(empty($t[2]) && empty($t[3]) && empty($t[4])){
+		  	echo "$i. $t[1]";
+		  }
+		  else{
+		  	echo "$i. $t[1] (";
+		  }
+		  if (!empty($t[2])){
+	  		format_echo($t[2], true, $comma_off_paranthesis);
+		  }
+		  if (!empty($t[3])){
+	  		format_echo($t[3], false, $comma_off_paranthesis);
+		  }
+		  if(!empty($t[4])){
+	  		format_echo($t[4], false, $comma_off_paranthesis);
+		  }
+		  echo ") ";
+		  if(empty($t[5]) && empty($t[6])){
+		  	 continue;
+		  }
+		  else
+		  	 echo "[";
+		  if(!empty($t[5])){
+	  		format_echo($t[5], true, $comma_off_square_braces);
+		  }
+		  if(!empty($t[6])){
+	  		format_echo($t[6], false, $comma_off_square_braces);
+		  }
+		  echo "]\n";
+		  $i++;
+	  }
+	}
 }
 ?>
