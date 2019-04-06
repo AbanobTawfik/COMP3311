@@ -12,15 +12,15 @@ require("a2.php");
 
 // PROGRAM BODY BEGINS
 
-$usage = "Usage: $argv[0] Year";
+$usage = "Usage: $argv[0] Actor";
 $db = dbConnect(DB_CONNECTION);
 
 // Check arguments
 if (count($argv) < 2) exit("$usage\n");
 
 // Get the return results
-$actor = $argv[1];
-$q = "select * from actor_movie where actor = '$actor' order by year";
+$actor = strtolower($argv[1]);
+$q = "select * from actors_movie where LOWER(actor) = '$actor' order by year;";
 $r = dbQuery($db, mkSQL($q, $actor));
 
 // Iterate through the results and print
