@@ -14,6 +14,10 @@ define("DB_CONNECTION","dbname=a2");
 // E.g., common constants, functions, etc.
 //
 
+// this function will be used to print the results from the table
+// using correct comma formatting based on flag value
+// if the flag is false that means it is the first value that is seen
+// and we begin inserting commas before our next value afterwards.
 function format_echo($table_value, $first, &$flag){
 	if (!$first && !empty($table_value)){
 	    if($flag){

@@ -99,7 +99,7 @@ SELECT movie_list.id as id,
        rating_list.num_voted_users as num_voted_users,
        all_genres(movie_list.id)
       FROM movie movie_list
-           INNER JOIN rating rating_list
+           LEFT JOIN rating rating_list
                       ON movie_list.id = rating_list.movie_id
 ORDER BY rating_list.imdb_score, rating_list.num_voted_users DESC;
 
