@@ -43,20 +43,55 @@ CREATE OR REPLACE VIEW ACTORS_MOVIE(actor, movie, director, year, tv_rating,
     FROM (SELECT actor_list.name as actor_name,
                  acting_list.movie_id as movie_id
           FROM actor actor_list
-               INNER JOIN acting acting_list
+               LEFT JOIN acting acting_list
                           ON acting_list.actor_id = actor_list.id) actor_movie_id
          -- Join the subquery with the movie table with matching movie id's
-         INNER JOIN movie movie_list
+         LEFT JOIN movie movie_list
                     ON movie_list.id = actor_movie_id.movie_id
          -- Join aswell on the rating table with matching movie id
-         INNER JOIN rating rating_list
+         LEFT JOIN rating rating_list
                     ON movie_list.id = rating_list.movie_id
          -- Join aswell on the director table with the matching director id
-         INNER JOIN director director_list
+         LEFT JOIN director director_list
                     ON director_list.id = movie_list.director_id
     -- order chronologically by the name, and then year
     ORDER BY actor_movie_id.actor_name, movie_list.year;
 
+--------------------------------------------------------------------------------
+--                                TASK B                                      --
+--------------------------------------------------------------------------------
+-- First we will make our function which returns all matches genres for a
+-- movie id in a combined string, where each genre is seperated with the ","
+-- character
+create or replace function all_genres2(input_movie_id int) returns text
+as $$
+-- we are going to declare all variables required for return value
+--
+declare
+      final_return_genre text;
+      entry record;
+BEGIN
+    final_return_genre = '';
+    FOR entry IN SELECT * FROM genre WHERE genre.movie_id = input_movie_id
+        ORDER BY genre.genre ASC
+    LOOP
+        final_return_genre := final_return_genre||entry.genre||',';
+    END LOOP;
+    final_return_genre := RTRIM(final_return_genre, ',');
+    return final_return_genre;
+END; $$ language plpgsql;
+
+-- This query will be used to return the list of all movies, with all rating
+-- details attached to the table, and all genres the movie is associated with
+CREATE OR REPLACE VIEW movie_list(movie, year, tv_rating, score, genres) as
+    SELECT movie_list.title,
+           movie_list.year,
+           movie_list.content_rating,
+           rating_list.imdb_score,
+           all_genres2(movie_list.id)
+    FROM movie movie_list
+         LEFT JOIN rating rating_list
+                   ON rating_list.movie_id = movie_list.id;
 --------------------------------------------------------------------------------
 --                                TASK C                                      --
 --------------------------------------------------------------------------------
