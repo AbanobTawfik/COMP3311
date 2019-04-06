@@ -1,14 +1,22 @@
 #!/usr/bin/php
 <?php
 
+////////////////////////////////////////////////////////////////////////////////
+//                                TASK A                                      //
+////////////////////////////////////////////////////////////////////////////////
 //
-// pg - print all PG and PG-13 movies of a given year
+// The acting script lists the movie title, its director, its year, its content
+// Rating and IMDB score, one per line, of all the movies acted by the given
+// Actor. The output is sorted by year and then by movie title,
+// Both in ascending order. If any movies have empty year, output them at the
+// End and sort them by movie title in ascending order. It accepts one
+// Command-line argument: an actor name (has to exactly match a name stored in
+// The database and the matching is case insensitive). It has the following
+// Output format:
 //
 
 // include the common PHP code file
 require("a2.php");
-
-
 
 // PROGRAM BODY BEGINS
 
