@@ -2,10 +2,10 @@
 --
 -- updates.sql
 --
--- Written by <<YOUR NAME>> (<<YOUR ID>>), Apr 2019
+-- Written by Abanob Tawfik (z5075490), Apr 2019
 
 --  This script takes a "vanilla" imdb database (a2.db) and
---  make all of the changes necessary to make the databas
+--  make all of the changes necessary to make the database
 --  work correctly with your PHP scripts.
 --  
 --  Such changes might involve adding new views,
