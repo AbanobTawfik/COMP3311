@@ -36,7 +36,7 @@ while ($t = dbNext($r)) {
   if (!empty($t[3]))
       echo "$t[3], ";
   if(!empty($t[4]))
-  	  echo "$t[4]"
+  	  echo "$t[4]";
   echo ")\n";
   $i++;
 }
