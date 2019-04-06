@@ -29,19 +29,20 @@ $usage = "Usage: $argv[0] [Genres] amount start_year end_year";
 $db = dbConnect(DB_CONNECTION);
 
 // Check arguments
-if (count($argv) != 3 || count($argv) != 4) 
+if (count($argv) != 4 && count($argv) != 5){ 
 	exit("$usage\n");
+}
 
-if(count($argv) == 3){
-	$q = "select * from rankings";
-	$r = dbQuery($db, mkSQL($q, $actor));
+if(count($argv) == 4){
+	$q = "select * from rankings;";
+	$r = dbQuery($db, mkSQL($q));
 	$amount = $argv[1];
 	$start_year = $argv[2];
 	$end_year = $argv[3];
 	// Iterate through the results and print
 	$i = 1;
-	while ($t = dbNext($r) || $i < $amount) {
-	  if($t[2] >= $start_year || $t[2] <= $end_year){
+	while (($t = dbNext($r)) && $i < $amount + 1) {
+	  if($t[2] >= $start_year && $t[2] <= $end_year){
 		  echo "$i. $t[1] (";
 		  if (!empty($t[2]))
 		      echo "$t[2], ";
