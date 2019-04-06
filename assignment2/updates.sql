@@ -18,7 +18,7 @@ UPDATE movie SET title = TRIM (title);
 --------------------------------------------------------------------------------
 -- This query will be used to return all the movies actors have acted in and
 -- All the details of the movies associated. This query will be used to solve
--- Task A by assosciating the actor with all the movies they have worked in
+-- Task A by associating the actor with all the movies they have worked in
 -- And all details of the movie.
 
 -- This query uses multiple joins to link data between multiple tables. We want
@@ -52,4 +52,51 @@ CREATE OR REPLACE VIEW ACTORS_MOVIE(actor, movie, director, year, tv_rating,
                     ON director_list.id = movie_list.director_id
     -- order chronologically by the name, and then year
     ORDER BY actor_movie_id.actor_name, movie_list.year;
+
+--------------------------------------------------------------------------------
+--                                TASK C                                      --
+--------------------------------------------------------------------------------
+
+-- First we will make our function which returns all matches genres for a
+-- movie id in a combined string, where each genre is seperated with the "&"
+-- character
+create or replace function all_genres(input_movie_id int) returns text
+as $$
+-- we are going to declare all variables required for return value
+--
+declare
+      final_return_genre text;
+      entry record;
+BEGIN
+    final_return_genre = '';
+    FOR entry IN SELECT * FROM genre WHERE genre.movie_id = input_movie_id
+    LOOP
+        final_return_genre := final_return_genre||entry.genre||'&';
+    END LOOP;
+    final_return_genre := RTRIM(final_return_genre, '&');
+    return final_return_genre;
+END; $$ language plpgsql;
+
+-- This query will be used to return all the movies and all the details of the
+-- Movies associated. This query will be used to solve Task B by ordering the
+-- Result by rating and including all genres with the movie
+-- We can then filter our results based on that result
+
+-- To deal with multiple genres we can use a PgPsql function to combine all
+-- genres to one column entry "all genres" in our view.
+CREATE OR REPLACE VIEW rankings(id, movie, year, content_rating, language,
+        score, number_of_reviews,all_genres_list) as
+SELECT movie_list.id as id,
+       movie_list.title as title,
+       movie_list.year as year,
+       movie_list.content_rating as content_rating,
+       movie_list.lang as lang,
+       rating_list.imdb_score as imdb_score,
+       rating_list.num_voted_users as num_voted_users,
+       all_genres(movie_list.id)
+      FROM movie movie_list
+           INNER JOIN rating rating_list
+                      ON movie_list.id = rating_list.movie_id
+ORDER BY rating_list.imdb_score DESC;
+
 
