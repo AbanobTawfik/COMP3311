@@ -24,7 +24,8 @@ $usage = "Usage: $argv[0] Actor";
 $db = dbConnect(DB_CONNECTION);
 
 // Check arguments
-if (count($argv) < 2) exit("$usage\n");
+if (count($argv) < 2) 
+  exit("$usage\n");
 
 // Get the return results
 $actor = strtolower($argv[1]);

@@ -1,0 +1,61 @@
+#!/usr/bin/php
+<?php
+
+////////////////////////////////////////////////////////////////////////////////
+//                                TASK C                                      //
+////////////////////////////////////////////////////////////////////////////////
+//
+// The toprank script takes in 3 or 4 commandline arguments:
+// ./toprank K StartYear EndYear
+// Or:
+// ./toprank Genres K StartYear EndYear
+// Where Genres is a list of genres separated by '&', K is the top K movies
+// Ranked by IMDB score and then by the number of votes
+// (both in descending order) between (and including) StartYear and EndYear,
+// With 1 <= K <= 1000, 1900 < StartYear <= EndYear < 2020 and your program
+// Will not be tested with a list of more than 8 genres. We interpret '&' as
+// conjunction, i.e., the selected movies shall contain all the specified
+// Genres. When Genres is not provided (when your program takes in 3 arguments),
+// Perform the same ranking but on movies with any genres. Do not include any
+// Movie titles with empty year.
+//
+
+// include the common PHP code file
+require("a2.php");
+
+// PROGRAM BODY BEGINS
+
+$usage = "Usage: $argv[0] [Genres] amount start_year end_year";
+$db = dbConnect(DB_CONNECTION);
+
+// Check arguments
+if (count($argv) != 3 || count($argv) != 4) 
+	exit("$usage\n");
+
+if(count($argv) == 3){
+	$q = "select * from rankings";
+	$r = dbQuery($db, mkSQL($q, $actor));
+	$amount = $argv[1];
+	$start_year = $argv[2];
+	$end_year = $argv[3];
+	// Iterate through the results and print
+	$i = 1;
+	while ($t = dbNext($r) || $i < $amount) {
+	  if($t[2] >= $start_year || $t[2] <= $end_year){
+		  echo "$i. $t[1] (";
+		  if (!empty($t[2]))
+		      echo "$t[2], ";
+		  if (!empty($t[3]))
+		      echo "$t[3], ";
+		  if(!empty($t[4]))
+		  	  echo "$t[4]) [";
+		  if(!empty($t[5]))
+		  	  echo "$t[5], ";
+		  if(!empty($t[6]))
+		  	  echo "$t[6]";
+		  echo "]\n";
+		  $i++;
+	  }
+	}
+}
+?>
