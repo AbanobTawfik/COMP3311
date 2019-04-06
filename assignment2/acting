@@ -19,18 +19,20 @@ $db = dbConnect(DB_CONNECTION);
 if (count($argv) < 2) exit("$usage\n");
 
 // Get the return results
-$val = $argv[1];
-$q = "select title, content_rating, lang, duration from movie where year = %d and content_rating in ('PG','PG-13') order by title";
-$r = dbQuery($db, mkSQL($q, $val));
+$actor = $argv[1];
+$q = "select * from actor_movie where actor = '$actor' order by year";
+$r = dbQuery($db, mkSQL($q, $actor));
 
 // Iterate through the results and print
 $i = 1;
 while ($t = dbNext($r)) {
-  echo "$i. $t[0] ($t[1]";
+  echo "$i. $t[0] -- $t[1](";
   if (!empty($t[2]))
-    echo ", $t[2]";
+    echo "$t[2], ";
   if (!empty($t[3]))
-      echo ", $t[3]";
+      echo "$t[3], ";
+  if(!empty($t[4]))
+  	  echo "$t[4]"
   echo ")\n";
   $i++;
 }
