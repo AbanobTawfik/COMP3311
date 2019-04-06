@@ -59,7 +59,7 @@ while ($t = dbNext($r)) {
     else
   	  echo "$i. $t[1] -- $t[2]";
 
-  	return;
+  	continue;
   }
   if(empty($t[2]))
     echo "$i. $t[1] (";

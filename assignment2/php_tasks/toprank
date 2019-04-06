@@ -34,7 +34,13 @@ if (count($argv) != 4 && count($argv) != 5){
 }
 
 if(count($argv) == 4){
-	$q = "select * from rankings;";
+	if($argv[1] <= 1 || $argv[1] >= 1000)
+		exit("1 >= amount >= 1000 !");
+	if($argv[2] < 1900 || $argv[2] > 2020 || $argv[3] < $argv[2]
+		|| $argv[3] > 2020)
+		exit("1900 < start_year <= end_year < 2020");
+	$q = "select * from rankings order by rankings.score DESC, 
+		  rankings.number_of_reviews DESC;";
 	$r = dbQuery($db, mkSQL($q));
 	$amount = $argv[1];
 	$start_year = $argv[2];
@@ -42,14 +48,21 @@ if(count($argv) == 4){
 	// Iterate through the results and print
 	$i = 1;
 	while (($t = dbNext($r)) && $i < $amount + 1) {
-	  if($t[2] >= $start_year && $t[2] <= $end_year){
-		  echo "$i. $t[1] (";
+	  if($t[2] >= $start_year && $t[2] <= $end_year && !empty($t[2])){
+		  if(empty($t[2]) && empty($t[3]) && empty($t[4]))
+		  	echo "$i. $t[1]";
+		  else
+		  	echo "$i. $t[1] (";
 		  if (!empty($t[2]))
 		      echo "$t[2], ";
 		  if (!empty($t[3]))
 		      echo "$t[3], ";
 		  if(!empty($t[4]))
-		  	  echo "$t[4]) [";
+		  	  echo "$t[4]) ";
+		  if(empty($t[5]) && empty($t[6]))
+		  	 continue;
+		  else
+		  	 echo "[";
 		  if(!empty($t[5]))
 		  	  echo "$t[5], ";
 		  if(!empty($t[6]))
@@ -58,5 +71,9 @@ if(count($argv) == 4){
 		  $i++;
 	  }
 	}
+}
+
+if(count($argv) == 5){
+	
 }
 ?>
