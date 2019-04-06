@@ -38,14 +38,14 @@ $q = "SELECT actor_movie_id.actor_name,
     FROM (SELECT actor_list.name as actor_name,
                  acting_list.movie_id as movie_id
           FROM actor actor_list
-               INNER JOIN acting acting_list
+               FULL OUTER JOIN acting acting_list
                           ON acting_list.actor_id = actor_list.id
-                             WHERE actor_list.name = $actor) actor_movie_id
-         INNER JOIN movie movie_list
+                             WHERE LOWER(actor_list.name) = '$actor') actor_movie_id
+         LEFT JOIN movie movie_list
                     ON movie_list.id = actor_movie_id.movie_id
-         INNER JOIN rating rating_list
+         LEFT JOIN rating rating_list
                     ON movie_list.id = rating_list.movie_id
-         INNER JOIN director director_list
+         LEFT JOIN director director_list
                     ON director_list.id = movie_list.director_id
     ORDER BY actor_movie_id.actor_name, movie_list.year;";
 $r = dbQuery($db, mkSQL($q, $actor));
@@ -53,17 +53,24 @@ $r = dbQuery($db, mkSQL($q, $actor));
 // Iterate through the results and print
 $i = 1;
 while ($t = dbNext($r)) {
-  if(empty($t[2]) && empty($t[3]) && empty($t[4])){
-  	echo "$i. $t[0] -- $t[1]";
+  if(empty($t[3]) && empty($t[4]) && empty($t[5])){
+    if(empty($t[2]))
+      echo "$i. $t[1]";
+    else
+  	  echo "$i. $t[1] -- $t[2]";
+
   	return;
   }
-  echo "$i. $t[0] -- $t[1](";
-  if (!empty($t[2]))
-    echo "$t[2], ";
+  if(empty($t[2]))
+    echo "$i. $t[1] (";
+  else
+    echo "$i. $t[1] -- $t[2] (";
   if (!empty($t[3]))
-      echo "$t[3], ";
-  if(!empty($t[4]))
-  	  echo "$t[4]";
+    echo "$t[3], ";
+  if (!empty($t[4]))
+      echo "$t[4], ";
+  if(!empty($t[5]))
+  	  echo "$t[5]";
   echo ")\n";
   $i++;
 }
