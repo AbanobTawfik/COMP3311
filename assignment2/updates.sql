@@ -25,9 +25,27 @@
 --  as some tasks need to perform full title search.
 UPDATE movie SET title = TRIM (title);
 
-CREATE OR REPLACE VIEW ACTOR_MOVIE(actor, movie) as
-SELECT 
-;
+CREATE OR REPLACE VIEW ACTORS_MOVIE(actor, movie, director, year, tv_rating,
+        rating) as
+    SELECT actor_movie_id.actor_name,
+           movie_list.title,
+           director_list.name,
+           movie_list.year,
+           movie_list.content_rating,
+           rating_list.imdb_score
+    FROM (SELECT actor_list.name as actor_name,
+                 acting_list.movie_id as movie_id
+          FROM actor actor_list
+               INNER JOIN acting acting_list
+                          ON acting_list.actor_id = actor_list.id) actor_movie_id
+         INNER JOIN movie movie_list
+                    ON movie_list.id = actor_movie_id.movie_id
+         INNER JOIN rating rating_list
+                    ON movie_list.id = rating_list.movie_id
+         INNER JOIN director director_list
+                    ON director_list.id = movie_list.director_id
+    ORDER BY actor_movie_id.actor_name, movie_list.year;
+
 
 --  Add your code below
 --
