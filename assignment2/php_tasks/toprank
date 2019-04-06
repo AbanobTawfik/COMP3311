@@ -133,9 +133,11 @@ if(count($argv) == 5){
 	  	  	$db_genre_match = $t[7];
 	  	  	$sorted_db_genre_match = explode("&",$db_genre_match);
 	  	  	sort($sorted_db_genre_match);
-	  	  	// if ALL the genres specified are found in the database we want to proccess
-	  	  	// the movie, otherwise we want to skip and go to the next movie.
-	  	  	if(!(count(array_diff($sorted_genre_match, $sorted_db_genre_match)) == 0)){
+	  	  	// if ALL the genres specified are found in the database
+	  	  	// we want to proccess the movie, otherwise we want to skip
+	  	  	// and go to the next movie.
+	  	  	if(!(count(array_diff($sorted_genre_match,
+	  	  	                                    $sorted_db_genre_match)) == 0)){
 	  	  		continue;
 	  	  	}
 	  	  }

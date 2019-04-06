@@ -16,6 +16,10 @@ UPDATE movie SET title = TRIM (title);
 --------------------------------------------------------------------------------
 --                                TASK A                                      --
 --------------------------------------------------------------------------------
+-- Note this Query was used as a skeleton for acting.php because
+-- parameters were passed into the php query to increase efficiency, however
+-- This is an overall view of all actors and movies they acted in.
+
 -- This query will be used to return all the movies actors have acted in and
 -- All the details of the movies associated. This query will be used to solve
 -- Task A by associating the actor with all the movies they have worked in
