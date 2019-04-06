@@ -26,6 +26,10 @@ $r = dbQuery($db, mkSQL($q, $actor));
 // Iterate through the results and print
 $i = 1;
 while ($t = dbNext($r)) {
+  if(empty($t[2]) && empty($t[3]) && empty($t[4])){
+  	echo "$i. $t[0] -- $t[1]";
+  	return;
+  }
   echo "$i. $t[0] -- $t[1](";
   if (!empty($t[2]))
     echo "$t[2], ";
