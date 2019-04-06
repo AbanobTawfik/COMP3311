@@ -35,25 +35,18 @@ $q = "SELECT actor_movie_id.actor_name,
            movie_list.year,
            movie_list.content_rating,
            rating_list.imdb_score
-    -- First we want to create a subquery to return the movie ids an actor has
-    -- Acted in, we want to join first the actor name and movie id from the
-    -- Actor table and acting table.
     FROM (SELECT actor_list.name as actor_name,
                  acting_list.movie_id as movie_id
           FROM actor actor_list
                INNER JOIN acting acting_list
                           ON acting_list.actor_id = actor_list.id
                              WHERE actor_list.name = $actor) actor_movie_id
-         -- Join the subquery with the movie table with matching movie id's
          INNER JOIN movie movie_list
                     ON movie_list.id = actor_movie_id.movie_id
-         -- Join aswell on the rating table with matching movie id
          INNER JOIN rating rating_list
                     ON movie_list.id = rating_list.movie_id
-         -- Join aswell on the director table with the matching director id
          INNER JOIN director director_list
                     ON director_list.id = movie_list.director_id
-    -- order chronologically by the name, and then year
     ORDER BY actor_movie_id.actor_name, movie_list.year;";
 $r = dbQuery($db, mkSQL($q, $actor));
 
