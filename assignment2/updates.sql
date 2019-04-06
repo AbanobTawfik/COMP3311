@@ -97,6 +97,6 @@ SELECT movie_list.id as id,
       FROM movie movie_list
            INNER JOIN rating rating_list
                       ON movie_list.id = rating_list.movie_id
-ORDER BY rating_list.imdb_score DESC;
+ORDER BY rating_list.imdb_score, rating_list.num_voted_users DESC;
 
 
