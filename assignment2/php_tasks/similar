@@ -91,7 +91,6 @@ $q = " SELECT big_query.id,
 		ORDER BY genre_count DESC, keyword_count DESC,
 		         imdb_score DESC, num_voted_users DESC;";
 $r = dbQuery($db, mkSQL($q, $movie));
-$genre_match = $argv[1];
 // Iterate through the results and print formatted
 $i = 1;
 while (($t = dbNext($r)) && $i < $amount + 1) {

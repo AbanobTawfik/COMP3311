@@ -1,0 +1,81 @@
+#!/usr/bin/php
+<?php
+
+////////////////////////////////////////////////////////////////////////////////
+//                                TASK E                                      //
+////////////////////////////////////////////////////////////////////////////////
+//
+// The toprank script takes in 3 or 4 commandline arguments:
+// ./toprank K StartYear EndYear
+// Or:
+// ./toprank Genres K StartYear EndYear
+// Where Genres is a list of genres separated by '&', K is the top K movies
+// Ranked by IMDB score and then by the number of votes
+// (both in descending order) between (and including) StartYear and EndYear,
+// With 1 <= K <= 1000, 1900 < StartYear <= EndYear < 2020 and your program
+// Will not be tested with a list of more than 8 genres. We interpret '&' as
+// conjunction, i.e., the selected movies shall contain all the specified
+// Genres. When Genres is not provided (when your program takes in 3 arguments),
+// Perform the same ranking but on movies with any genres. Do not include any
+// Movie titles with empty year.
+//
+
+// include the common PHP code file
+require("a2.php");
+
+// PROGRAM BODY BEGINS
+
+$usage = "Usage: $argv[0] Start Goal";
+$db = dbConnect(DB_CONNECTION);
+
+// Check arguments
+if (count($argv) != 3){ 
+  exit("$usage\n");
+}
+
+$q = " SELECT * from pathfinding_actors;";
+$r = dbQuery($db, mkSQL($q));
+// Iterate through the results and create graph which will be used for path finding
+$graph = array();
+while (($t = dbNext($r))) {
+  if(empty($graph[strtolower($t[1])])){
+  	$graph[strtolower($t[1])] = array();
+  }
+  if(empty($graph[strtolower($t[5])])){
+  	$graph[strtolower($t[5])] = array();  
+  }
+  if(empty($t[4])){
+  	$graph[strtolower($t[1])][strtolower($t[5])] = $t[3];
+  }else{
+  	$graph[strtolower($t[1])][strtolower($t[5])] = $t[3].'-&-'.$t[4];
+  }
+}
+$visited = array();
+$to_visit = new SplQueue();
+$start = strtolower($argv[1]);
+$goal = strtolower($argv[2]);
+$current = $start;
+$found = false;
+array_push($visited, $start);
+$to_visit->enqueue($start);
+
+while(!($to_visit->isEmpty())){
+	$current = $to_visit->dequeue();
+	array_push($visited, $current);
+	echo "$current\n";
+	foreach($graph[$current] as $node => $val){
+		if(in_array($node, $visited)){
+			continue;
+		}
+		if($node == $goal){
+			$found = true;
+			echo "$node\n";
+			$current = $node;
+			break;
+		}
+		array_push($visited, $node);
+		$to_visit->enqueue($node);
+	}
+}
+
+?>
