@@ -205,3 +205,19 @@ LEFT JOIN(SELECT count(keyword_list.keyword) as amount,
 ORDER BY genre_count DESC, keyword_count DESC,
          imdb_score DESC, num_voted_users DESC;
 
+--------------------------------------------------------------------------------
+--                                TASK E && F                                 --
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE VIEW pathfinding_actors(actor_id, actor , movie_id,
+        movie, year) AS
+SELECT actor_list.id,
+       actor_list.name,
+       acting_list.movie_id,
+       movie_list.title,
+       movie_list.year
+FROM actor actor_list
+     JOIN acting acting_list
+          ON acting_list.actor_id = actor_list.id
+     JOIN movie movie_list
+          ON movie_list.id = acting_list.movie_id;
