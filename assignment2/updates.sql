@@ -72,17 +72,22 @@ declare
       entry record;
 BEGIN
     final_return_genre = '';
+    -- scan through each entry in genre table, and if we have entry with
+    -- same movie id we will conjoin them together with the , character
     FOR entry IN SELECT * FROM genre WHERE genre.movie_id = input_movie_id
         ORDER BY genre.genre ASC
     LOOP
         final_return_genre := final_return_genre||entry.genre||',';
     END LOOP;
+    -- remove final , to sanitize list
     final_return_genre := RTRIM(final_return_genre, ',');
     return final_return_genre;
 END; $$ language plpgsql;
 
 -- This query will be used to return the list of all movies, with all rating
 -- details attached to the table, and all genres the movie is associated with
+-- we can place restrictions to receive only certain entries from this table
+-- within the php script
 CREATE OR REPLACE VIEW movie_list(movie, year, tv_rating, score, genres) as
     SELECT movie_list.title,
            movie_list.year,
@@ -108,10 +113,14 @@ declare
       entry record;
 BEGIN
     final_return_genre = '';
+    -- scan through each entry in genre table, and if we have entry with
+    -- same movie id we will conjoin to our genre list the extra genre and &
+    -- character
     FOR entry IN SELECT * FROM genre WHERE genre.movie_id = input_movie_id
     LOOP
         final_return_genre := final_return_genre||entry.genre||'&';
     END LOOP;
+    -- remove the final & at end of genre list to sanitize list
     final_return_genre := RTRIM(final_return_genre, '&');
     return final_return_genre;
 END; $$ language plpgsql;
@@ -133,9 +142,90 @@ SELECT movie_list.id as id,
        rating_list.imdb_score as imdb_score,
        rating_list.num_voted_users as num_voted_users,
        all_genres(movie_list.id)
-      FROM movie movie_list
-           LEFT JOIN rating rating_list
-                      ON movie_list.id = rating_list.movie_id
+FROM movie movie_list
+   LEFT JOIN rating rating_list
+              ON movie_list.id = rating_list.movie_id
 ORDER BY rating_list.imdb_score, rating_list.num_voted_users DESC;
 
+--------------------------------------------------------------------------------
+--                                TASK D                                      --
+--------------------------------------------------------------------------------
 
+-- First we will make our function which will return the amount of
+-- matching genres between the two movies (this is also a symmetric property)
+-- it will create a list of all genres for the standardised movie and then
+-- traverse the genre table looking for all movies which have the same id
+-- as the input movie and adds one to the count if the genre is in the list made
+create or replace function matching_genre_count(input_movie_id int,
+    standard_movie_id int) returns int
+as $$
+-- we are going to declare all variables required for return value
+--
+declare
+      genre_list_movie text[];
+      entry record;
+      number_matches int;
+BEGIN
+    number_matches := 0;
+    FOR entry IN SELECT * FROM genre WHERE genre.movie_id = standard_movie_id
+    LOOP
+        genre_list_movie := array_append(genre_list_movie::text[],
+                                         entry.genre::text);
+    END LOOP;
+
+    FOR entry IN SELECT * FROM genre WHERE genre.movie_id = input_movie_id
+    LOOP
+        IF entry.genre = ANY(genre_list_movie)
+        THEN
+            number_matches := number_matches + 1;
+        END IF;
+    END LOOP;
+    return number_matches;
+END; $$ language plpgsql;
+
+-- First we will make our function which will return the amount of
+-- matching genres between the two movies (this is also a symmetric property)
+-- it will create a list of all genres for the standardised movie and then
+-- traverse the genre table looking for all movies which have the same id
+-- as the input movie and adds one to the count if the genre is in the list made
+create or replace function matching_keyword_count(input_movie_id int,
+    standard_movie_id int) returns int
+as $$
+-- we are going to declare all variables required for return value
+--
+declare
+      keyword_list_movie text[];
+      keyword_list_movie2 text[];
+      entry record;
+      number_matches int;
+BEGIN
+    number_matches := 0;
+    FOR entry IN SELECT * FROM keyword WHERE keyword.movie_id = standard_movie_id
+    LOOP
+        keyword_list_movie := array_append(keyword_list_movie::text[],
+                                         entry.keyword::text);
+    END LOOP;
+    FOR entry IN SELECT * FROM keyword WHERE keyword.movie_id = input_movie_id
+    LOOP
+        IF entry.keyword = ANY(keyword_list_movie)
+        THEN
+            number_matches := number_matches + 1;
+        END IF;
+    END LOOP;
+    return number_matches;
+END; $$ language plpgsql;
+
+CREATE OR REPLACE VIEW similar_struct(id, movie, year, matching_genres,
+        matching_keywords, score, number_of_reviews) as
+SELECT result_query.*
+FROM (SELECT movie_list.id as id,
+             movie_list.title as title,
+             movie_list.year as year,
+             matching_genre_count(movie_list.id,398) as matching_genres,
+             matching_keyword_count(movie_list.id,398) as matching_keywords,
+             rating_list.imdb_score as imdb_score,
+             rating_list.num_voted_users as num_voted_users
+      FROM movie movie_list
+           LEFT JOIN rating rating_list
+                     ON movie_list.id = rating_list.movie_id) result_query
+ORDER BY result_query.matching_genres DESC, result_query.matching_keywords DESC;
