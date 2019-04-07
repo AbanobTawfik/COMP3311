@@ -151,81 +151,57 @@ ORDER BY rating_list.imdb_score, rating_list.num_voted_users DESC;
 --                                TASK D                                      --
 --------------------------------------------------------------------------------
 
--- First we will make our function which will return the amount of
--- matching genres between the two movies (this is also a symmetric property)
--- it will create a list of all genres for the standardised movie and then
--- traverse the genre table looking for all movies which have the same id
--- as the input movie and adds one to the count if the genre is in the list made
-create or replace function matching_genre_count(input_movie_id int,
-    standard_movie_id int) returns int
-as $$
--- we are going to declare all variables required for return value
---
-declare
-      genre_list_movie text[];
-      entry record;
-      number_matches int;
-BEGIN
-    number_matches := 0;
-    FOR entry IN SELECT * FROM genre WHERE genre.movie_id = standard_movie_id
-    LOOP
-        genre_list_movie := array_append(genre_list_movie::text[],
-                                         entry.genre::text);
-    END LOOP;
-
-    FOR entry IN SELECT * FROM genre WHERE genre.movie_id = input_movie_id
-    LOOP
-        IF entry.genre = ANY(genre_list_movie)
-        THEN
-            number_matches := number_matches + 1;
-        END IF;
-    END LOOP;
-    return number_matches;
-END; $$ language plpgsql;
-
--- First we will make our function which will return the amount of
--- matching genres between the two movies (this is also a symmetric property)
--- it will create a list of all genres for the standardised movie and then
--- traverse the genre table looking for all movies which have the same id
--- as the input movie and adds one to the count if the genre is in the list made
-create or replace function matching_keyword_count(input_movie_id int,
-    standard_movie_id int) returns int
-as $$
--- we are going to declare all variables required for return value
---
-declare
-      keyword_list_movie text[];
-      keyword_list_movie2 text[];
-      entry record;
-      number_matches int;
-BEGIN
-    number_matches := 0;
-    FOR entry IN SELECT * FROM keyword WHERE keyword.movie_id = standard_movie_id
-    LOOP
-        keyword_list_movie := array_append(keyword_list_movie::text[],
-                                         entry.keyword::text);
-    END LOOP;
-    FOR entry IN SELECT * FROM keyword WHERE keyword.movie_id = input_movie_id
-    LOOP
-        IF entry.keyword = ANY(keyword_list_movie)
-        THEN
-            number_matches := number_matches + 1;
-        END IF;
-    END LOOP;
-    return number_matches;
-END; $$ language plpgsql;
-
-CREATE OR REPLACE VIEW similar_struct(id, movie, year, matching_genres,
+CREATE OR REPLACE VIEW similar_movies(id, movie, year, matching_genres,
         matching_keywords, score, number_of_reviews) as
-SELECT result_query.*
-FROM (SELECT movie_list.id as id,
-             movie_list.title as title,
-             movie_list.year as year,
-             matching_genre_count(movie_list.id,398) as matching_genres,
-             matching_keyword_count(movie_list.id,398) as matching_keywords,
-             rating_list.imdb_score as imdb_score,
-             rating_list.num_voted_users as num_voted_users
-      FROM movie movie_list
-           LEFT JOIN rating rating_list
-                     ON movie_list.id = rating_list.movie_id) result_query
-ORDER BY result_query.matching_genres DESC, result_query.matching_keywords DESC;
+ SELECT big_query.id,
+        big_query.title,
+        big_query.year,
+        coalesce(big_query.genre_count, 0) as genre_count,
+        coalesce(big_query.keyword_count, 0) as keyword_count,
+        big_query.imdb_score,
+        big_query.num_voted_users
+ FROM  (SELECT movie_list.id as id,
+       movie_list.title as title,
+       movie_list.year as year,
+       join_query_genre.amount as genre_count,
+       join_query_keyword.amount as keyword_count,
+       rating_list.imdb_score as imdb_score,
+       rating_list.num_voted_users as num_voted_users
+FROM movie movie_list
+     LEFT JOIN rating rating_list
+               ON movie_list.id = rating_list.movie_id
+LEFT JOIN(SELECT count(genre_list.genre) as amount,
+            movie_list.id as id
+     FROM genre genre_list
+          JOIN movie movie_list
+               ON movie_list.id = genre_list.movie_id
+     JOIN(SELECT genre_list.genre,
+                 movie_list.id
+                 FROM genre genre_list
+                      JOIN movie movie_list
+                           ON genre_list.movie_id = movie_list.id
+                      WHERE movie_list.title ILIKE 'Happy FeeT'
+                 ) AS genre_join
+                      ON genre_join.genre = genre_list.genre
+     GROUP BY movie_list.id, genre_join.id
+              HAVING genre_join.id != movie_list.id) as join_query_genre
+          ON join_query_genre.id = movie_list.id
+LEFT JOIN(SELECT count(keyword_list.keyword) as amount,
+            movie_list.id as id
+     FROM keyword keyword_list
+          JOIN movie movie_list
+               ON movie_list.id = keyword_list.movie_id
+     JOIN(SELECT keyword_list.keyword,
+                 movie_list.id
+                 FROM keyword keyword_list
+                      JOIN movie movie_list
+                           ON keyword_list.movie_id = movie_list.id
+                      WHERE movie_list.title ILIKE 'Happy FeeT'
+                 ) AS keyword_join
+                      ON keyword_join.keyword = keyword_list.keyword
+     GROUP BY movie_list.id, keyword_join.id
+              HAVING keyword_join.id != movie_list.id) as join_query_keyword
+          ON join_query_keyword.id = movie_list.id)big_query
+ORDER BY genre_count DESC, keyword_count DESC,
+         imdb_score DESC, num_voted_users DESC;
+
