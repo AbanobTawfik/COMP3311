@@ -1,0 +1,123 @@
+#!/usr/bin/php
+<?php
+
+////////////////////////////////////////////////////////////////////////////////
+//                                TASK C                                      //
+////////////////////////////////////////////////////////////////////////////////
+//
+// The toprank script takes in 3 or 4 commandline arguments:
+// ./toprank K StartYear EndYear
+// Or:
+// ./toprank Genres K StartYear EndYear
+// Where Genres is a list of genres separated by '&', K is the top K movies
+// Ranked by IMDB score and then by the number of votes
+// (both in descending order) between (and including) StartYear and EndYear,
+// With 1 <= K <= 1000, 1900 < StartYear <= EndYear < 2020 and your program
+// Will not be tested with a list of more than 8 genres. We interpret '&' as
+// conjunction, i.e., the selected movies shall contain all the specified
+// Genres. When Genres is not provided (when your program takes in 3 arguments),
+// Perform the same ranking but on movies with any genres. Do not include any
+// Movie titles with empty year.
+//
+
+// include the common PHP code file
+require("a2.php");
+
+// PROGRAM BODY BEGINS
+
+$usage = "Usage: $argv[0] movie amount";
+$db = dbConnect(DB_CONNECTION);
+
+// Check arguments
+if (count($argv) != 3){ 
+  exit("$usage\n");
+}
+
+if($argv[2] > 1000 || $argv[2] < 1){
+	exit("1 <= amount <= 1000\n");
+}
+
+$movie = $argv[1];
+$amount = $argv[2];
+$q = " SELECT big_query.id,
+    	big_query.title,
+    	big_query.year,
+        coalesce(big_query.genre_count, 0) as genre_count,
+        coalesce(big_query.keyword_count, 0) as keyword_count,
+        big_query.imdb_score,
+        big_query.num_voted_users
+			FROM  (SELECT movie_list.id as id,
+        movie_list.title as title,
+        movie_list.year as year,
+        join_query_genre.amount as genre_count,
+        join_query_keyword.amount as keyword_count,
+        rating_list.imdb_score as imdb_score,
+        rating_list.num_voted_users as num_voted_users
+		FROM movie movie_list
+		     LEFT JOIN rating rating_list
+		               ON movie_list.id = rating_list.movie_id
+		LEFT JOIN(SELECT count(genre_list.genre) as amount,
+		            movie_list.id as id
+		     FROM genre genre_list
+		          JOIN movie movie_list
+		               ON movie_list.id = genre_list.movie_id
+		     JOIN(SELECT genre_list.genre,
+		                 movie_list.id
+		                 FROM genre genre_list
+		                      JOIN movie movie_list
+		                           ON genre_list.movie_id = movie_list.id
+		                      WHERE movie_list.title ILIKE '$movie'
+		                 ) AS genre_join
+		                      ON genre_join.genre = genre_list.genre
+		     GROUP BY movie_list.id, genre_join.id
+		              HAVING genre_join.id != movie_list.id) as join_query_genre
+		          ON join_query_genre.id = movie_list.id
+		LEFT JOIN(SELECT count(keyword_list.keyword) as amount,
+		            movie_list.id as id
+		     FROM keyword keyword_list
+		          JOIN movie movie_list
+		               ON movie_list.id = keyword_list.movie_id
+		     JOIN(SELECT keyword_list.keyword,
+		                 movie_list.id
+		                 FROM keyword keyword_list
+		                      JOIN movie movie_list
+		                           ON keyword_list.movie_id = movie_list.id
+		                      WHERE movie_list.title ILIKE '$movie'
+		                 ) AS keyword_join
+		                      ON keyword_join.keyword = keyword_list.keyword
+		     GROUP BY movie_list.id, keyword_join.id
+		              HAVING keyword_join.id != movie_list.id) as join_query_keyword
+		          ON join_query_keyword.id = movie_list.id)big_query
+		ORDER BY genre_count DESC, keyword_count DESC,
+		         imdb_score DESC, num_voted_users DESC;";
+$r = dbQuery($db, mkSQL($q, $movie));
+$genre_match = $argv[1];
+// Iterate through the results and print formatted
+$i = 1;
+while (($t = dbNext($r)) && $i < $amount + 1) {
+  $comma_off_square_braces = true;
+  if(empty($t[2])){
+  	echo "$i. $t[1] ";
+  }else{
+  	echo "$i. $t[1] ($t[2]) ";
+  }
+  if(!empty($t[3]) || !empty($t[4]) || !empty($t[5]) || !empty($t[6])){
+  	echo "[";
+  	if(!empty($t[3])){
+  		format_echo($t[3], true, $comma_off_square_braces);
+  	}
+  	if(!empty($t[4])){
+  		format_echo($t[4], false, $comma_off_square_braces);
+  	}
+  	if(!empty($t[5])){
+  		format_echo($t[5], false, $comma_off_square_braces);
+  	}
+  	if(!empty($t[6])){
+  		format_echo($t[6], false, $comma_off_square_braces);
+  	}
+  	echo "]\n";
+  }
+  $i++;
+}
+
+?>

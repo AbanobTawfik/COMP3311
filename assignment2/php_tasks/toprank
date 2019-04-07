@@ -39,8 +39,8 @@ if (count($argv) != 4 && count($argv) != 5){
 if(count($argv) == 4){
 	// if we ask for more movies than is allowed by specification
 	// throw an error message
-	if($argv[1] <= 1 || $argv[1] >= 1000){
-		exit("1 >= amount >= 1000 !");
+	if($argv[1] < 1 || $argv[1] > 1000){
+		exit("1 < amount < 1000 !");
 	}
 	// If our date parameters fall out of bounds from the specification
 	// then we want to throw an error message
