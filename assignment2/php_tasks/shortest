@@ -55,27 +55,40 @@ $to_visit = new SplQueue();
 $start = strtolower($argv[1]);
 $goal = strtolower($argv[2]);
 $current = $start;
-$found = false;
+
 array_push($visited, $start);
-$to_visit->enqueue($start);
+$to_visit->enqueue(array($start));
+$shortest_path_length = -1;
+$found_shortest_paths = false;
+$all_shortest_paths = array();
+
 
 while(!($to_visit->isEmpty())){
 	$current = $to_visit->dequeue();
-	array_push($visited, $current);
-	echo "$current\n";
-	foreach($graph[$current] as $node => $val){
-		if(in_array($node, $visited)){
-			continue;
+	if((sizeof($current) > $shortest_path_length - 1 && $shortest_path_length != -1) && sizeof($current) > 6){
+		break;
+	}
+	$inspection_node = end($current);
+	foreach($graph[$inspection_node] as $node => $val){
+		if(!in_array($node, $current)){
+			$new_array = $current;
+			array_push($new_array, $node);
+			$to_visit->enqueue($new_array);
+
 		}
-		if($node == $goal){
-			$found = true;
-			echo "$node\n";
-			$current = $node;
-			break;
+		if(strtolower($node) == $goal && !$found_shortest_paths){
+			$found_shortest_paths = true;
+			array_push($all_shortest_paths, $new_array);
+			$found_shortest_paths = true;
+			$shortest_path_length = sizeof($new_array);
+			print_r($new_array);
 		}
-		array_push($visited, $node);
-		$to_visit->enqueue($node);
+		if(strtolower($node) == $goal){
+			array_push($all_shortest_paths, $new_array);
+			$found_shortest_paths = true;
+			print_r($new_array);
+		}
 	}
 }
-
+//print_r($all_shortest_paths);
 ?>
