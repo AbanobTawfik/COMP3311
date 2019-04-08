@@ -210,13 +210,14 @@ ORDER BY genre_count DESC, keyword_count DESC,
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE VIEW pathfinding_actors(actor_id, actor , movie_id,
-        movie, year, link) AS
+        movie, year, link, actor_id2) AS
 SELECT actor_list.id,
        actor_list.name,
        acting_list.movie_id,
        movie_list.title,
        movie_list.year,
-       actor_list2.name
+       actor_list2.name,
+       actor_list2.id
 FROM actor actor_list
      JOIN acting acting_list
           ON acting_list.actor_id = actor_list.id
@@ -227,3 +228,5 @@ FROM actor actor_list
      JOIN actor actor_list2
           ON actor_list2.id = acting_list2.actor_id
              WHERE acting_list2.actor_id != acting_list.actor_id;
+
+select count(*) from actor;
