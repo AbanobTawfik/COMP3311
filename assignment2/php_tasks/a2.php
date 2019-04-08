@@ -35,9 +35,6 @@ function format_echo($table_value, $first, &$flag){
 	}
 }
 
-function create_graph(&$graph, &$r, $t){
-	
-}
 
 
 ?>

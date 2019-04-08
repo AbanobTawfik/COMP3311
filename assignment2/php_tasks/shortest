@@ -33,62 +33,253 @@ if (count($argv) != 3){
   exit("$usage\n");
 }
 
-$q = " SELECT * from pathfinding_actors;";
+$start = $argv[1];
+$goal = $argv[2];
+
+$q = "SELECT name from actor where name ILIKE '$start' LIMIT 1;";
+$r = dbQuery($db, mkSQL($q, $start));
+$t = dbNext($r);
+if(empty($t[0])){
+	exit("$start is not an actor\n");
+}
+$start = $t[0];
+
+$q = "SELECT name from actor where name ILIKE '$goal' LIMIT 1;";
+$r = dbQuery($db, mkSQL($q, $goal));
+$t = dbNext($r);
+if(empty($t[0])){
+	exit("$goal is not an actor\n");
+}
+$goal = $t[0];
+
+if(strtolower($start) == strtolower($goal)){
+	return;
+}
+
+$q = "SELECT * from pathfinding_actors;";
 $r = dbQuery($db, mkSQL($q));
 // Iterate through the results and create graph which will be used for path finding
 $graph = array();
 while (($t = dbNext($r))) {
-  if(empty($graph[strtolower($t[1])])){
-  	$graph[strtolower($t[1])] = array();
+  if(empty($graph[$t[1]])){
+  	$graph[$t[1]] = array();
   }
-  if(empty($graph[strtolower($t[5])])){
-  	$graph[strtolower($t[5])] = array();  
+  if(empty($graph[$t[5]])){
+  	$graph[$t[5]] = array();  
+  }
+  if(empty($graph[$t[1]][$t[5]])){
+  	 $graph[$t[1]][$t[5]] = array();
+  }
+  if(empty($graph[$t[5]][$t[1]])){
+  	 $graph[$t[5]][$t[1]] = array();
   }
   if(empty($t[4])){
-  	$graph[strtolower($t[1])][strtolower($t[5])] = $t[3];
+  	array_push($graph[$t[1]][$t[5]], $t[3]);
+  	array_push($graph[$t[5]][$t[1]], $t[3]);
   }else{
-  	$graph[strtolower($t[1])][strtolower($t[5])] = $t[3].'-&-'.$t[4];
+  	array_push($graph[$t[1]][$t[5]], $t[3].'-&*!@#$%^&*()_+*$-'.$t[4]);
+  	array_push($graph[$t[5]][$t[1]], $t[3].'-&*!@#$%^&*()_+*$-'.$t[4]);
   }
 }
 $visited = array();
-$to_visit = new SplQueue();
-$start = strtolower($argv[1]);
-$goal = strtolower($argv[2]);
-$current = $start;
+$to_visit = array();
+//print_r($graph);
 
 array_push($visited, $start);
-$to_visit->enqueue(array($start));
 $shortest_path_length = -1;
 $found_shortest_paths = false;
 $all_shortest_paths = array();
+$ida = 1;
 
 
-while(!($to_visit->isEmpty())){
-	$current = $to_visit->dequeue();
-	if((sizeof($current) > $shortest_path_length - 1 && $shortest_path_length != -1) && sizeof($current) > 6){
+while($ida < 7){
+	$current = array($start);
+	array_push($to_visit,$current);
+	while(sizeof($to_visit) > 0){
+		$current = array_pop($to_visit);
+		$new_array = $current;
+		$inspection_node = end($new_array);
+		if($inspection_node == $goal && !in_array($to_visit, $current)){
+			//print_r($current);
+			if($shortest_path_length == -1){
+				//print_r($current);
+				array_push($all_shortest_paths, $current);
+				$shortest_path_length = sizeof($current);
+			}else if($shortest_path_length == sizeof($current)){
+				array_push($all_shortest_paths, $current);
+			}
+		}
+		if(sizeof($current) <= $ida){
+			foreach($graph[$inspection_node] as $node => $val){
+				if(!in_array($node, $current)){
+					$new_array = $current;
+					array_push($new_array, $node);
+					array_push($to_visit, $new_array);
+				}
+			} 
+		}
+	}
+	$to_visit = array();
+	$ida++;
+	//echo "pushing depth to $ida\n";
+	if($ida > $shortest_path_length && $shortest_path_length != -1){
 		break;
 	}
-	$inspection_node = end($current);
-	foreach($graph[$inspection_node] as $node => $val){
-		if(!in_array($node, $current)){
-			$new_array = $current;
-			array_push($new_array, $node);
-			$to_visit->enqueue($new_array);
+}
 
+$all_movies_on_shortest_path = array();
+//print_r($all_shortest_paths);
+for($i = 0; $i < sizeof($all_shortest_paths); $i++){
+	for($j = 0; $j < sizeof($all_shortest_paths[$i]) - 1; $j++){
+		$n1 = $all_shortest_paths[$i][$j];
+		$n2 = $all_shortest_paths[$i][$j + 1];
+		$print_out = "";
+		$actor_movie = array();
+		foreach($graph[$n1][$n2] as $val){
+			$movie_and_year = explode("-&*!@#$%^&*()_+*$-",$val);
+			
+			if(sizeof($movie_and_year) == 1){
+				$print_out = $movie_and_year[0];
+			}else{
+				$print_out = $movie_and_year[0].' ('.$movie_and_year[1].')';
+			}
+			$print_out = "$n1 was in $print_out with $n2\n";
+			//echo "$n1 was in $print_out with $n2\n";
+			array_push($actor_movie, $print_out);
 		}
-		if(strtolower($node) == $goal && !$found_shortest_paths){
-			$found_shortest_paths = true;
-			array_push($all_shortest_paths, $new_array);
-			$found_shortest_paths = true;
-			$shortest_path_length = sizeof($new_array);
-			print_r($new_array);
-		}
-		if(strtolower($node) == $goal){
-			array_push($all_shortest_paths, $new_array);
-			$found_shortest_paths = true;
-			print_r($new_array);
+		array_push($all_movies_on_shortest_path, $actor_movie);
+		//echo "\n";
+	}
+}
+
+$to_visit = new SplQueue();
+$all_shortest_paths = array();
+$current = "";
+for($i = 0; $i < sizeof($all_movies_on_shortest_path); $i++){
+	for($j = 0; $j < sizeof($all_movies_on_shortest_path[$i]); $j++){
+		$p = explode(" was in", $all_movies_on_shortest_path[$i][$j]);
+		if(strtolower($p[0]) == strtolower($start)){
+			$to_visit->enqueue(array($all_movies_on_shortest_path[$i][$j]));
 		}
 	}
 }
+//print_r($all_movies_on_shortest_path);
+//print_r($graph);
+//echo "hi\n";
+while(!($to_visit->isEmpty())){
+	$current = $to_visit->dequeue();
+	$curr = end($current);
+	$identifier = explode(" with ", $curr);
+	$identifier = $identifier[1];
+	$identifier = trim($identifier);
+	for($i = 0; $i < sizeof($all_movies_on_shortest_path); $i++){
+		if(strtolower($identifier) == strtolower($goal)){
+			//print_r($current);
+			array_push($all_shortest_paths, $current);
+		}
+		for($j = 0; $j < sizeof($all_movies_on_shortest_path[$i]); $j++){
+			$p = explode(" was in", $all_movies_on_shortest_path[$i][$j]);
+			$d = strtolower($p[0]);
+			$q = strtolower($identifier);
+			//echo "$q <=> $goal\n";
+			if(strtolower($p[0]) == strtolower($identifier)){
+				$new_path = $current;
+				array_push($new_path, $all_movies_on_shortest_path[$i][$j]);
+				//print_r($new_path);
+				$to_visit->enqueue($new_path);
+
+				$check = $all_movies_on_shortest_path[$i][$j];
+				$new_p = explode(" with ", $check);
+				$new_p = $new_p[1];
+				$new_p = trim($new_p);
+				//echo "$check\n";
+				//if(strtolower($new_p) == strtolower("Robert Duvall")){
+					//echo "hi\n";
+				//	echo "$check\n";
+				//}
+
+				if(strtolower($new_p) == strtolower($goal)){
+					//echo "hello\n";
+					array_push($all_shortest_paths, $new_path);
+				}
+			}
+		}
+	}
+	//if(strtolower($identifier) == strtolower($goal)){
+	//	break;
+	//}
+	//echo "$identifier";	
+}
+
 //print_r($all_shortest_paths);
+//$pp = "";
+$all_movies_on_shortest_path = array();
+for($i = 0; $i < sizeof($all_shortest_paths); $i++){
+	//$pp = "";
+	if(sizeof($all_shortest_paths[$i]) == 1){
+		$n1 = $all_shortest_paths[$i][0];
+		//$n1 = trim($n1);
+		$val == $n1;
+		array_push($all_movies_on_shortest_path, $n1);
+	}else{
+		$val = "";
+		for($j = 0; $j < sizeof($all_shortest_paths[$i]) - 1; $j++){
+			$n1 = $all_shortest_paths[$i][$j];
+			$n1 = trim($n1);
+			$n2 = $all_shortest_paths[$i][$j + 1];
+			$val = $val.$n1."; ".$n2;
+		}
+		array_push($all_movies_on_shortest_path, $val);
+
+	}
+	//echo "$pp\n";
+}
+//print_r($all_movies_on_shortest_path);
+$all_movies_on_shortest_path = array_unique($all_movies_on_shortest_path);
+$i = 1;
+sort($all_movies_on_shortest_path);
+foreach($all_movies_on_shortest_path as $path){
+	echo "$i. $path";
+	$i++;
+}
+
+//for($i = 0; $i < sizeof($all_shortest_paths) - 1; $i++){
+//	$n1 = $all_shortest_paths[$i];
+//	$n2 = $all_shortest_paths[$i + 1];
+//	print_r($n1);
+//	print_r($n2);
+//	echo "$n1 <==> $n2\n";
+	//foreach($graph[$n1][$n2] as $vl){
+	//	echo "$n1 was in $vl with $n2\n";
+	//}
+	//print_r($graph[$n1][$n2]);
+	//print_r($graph[$node][$val]);
+//}
+//$no_matches = 1;
+//$to_print = array();
+//foreach($all_shortest_paths as $node => $val){
+	//echo "$no_matches. ";
+//	$final_print = "";
+//	for($i = 0; $i < sizeof($val)  - 1; $i++){
+//		$n1 = $val[$i];
+//		$n2 = $val[$i + 1];
+//		$movie_and_year = explode("-&**$-",$graph[$n1][$n2]);
+//		$print_out = "";
+//		if(sizeof($movie_and_year) == 1){
+//			$print_out = $movie_and_year[0];
+//		}else{
+//			$print_out = $movie_and_year[0].' ('.$movie_and_year[1].')';
+//		}
+//		$size = sizeof($movie_and_year);
+//		$final_print = $final_print."$n1 was in $print_out with $n2; ";
+//	}
+//	array_push($to_print, $final_print);
+//}
+//$to_print = array_unique($to_print);
+//sort($to_print);
+//foreach($to_print as $line){
+//	echo "$no_matches. $line\n";
+//	$no_matches++;
+//}
+
 ?>
