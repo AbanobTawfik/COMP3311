@@ -271,7 +271,7 @@ BEGIN
                                    AND graph3.actor2_node != graph2.actor1_node
                                    AND graph3.movie_edge != graph2.movie_edge
                                    AND graph3.movie_edge != graph2.movie_edge
-                                   AND graph3.movie_edge != graph1.movie_edge ;
+                                   AND graph3.movie_edge != graph1.movie_edge;
 END; $$ language plpgsql;
 
 
