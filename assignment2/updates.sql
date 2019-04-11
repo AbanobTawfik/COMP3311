@@ -209,148 +209,111 @@ ORDER BY genre_count DESC, keyword_count DESC,
 --                                TASK E && F                                 --
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW pathfinding_actors(actor_id, actor , movie_id,
-        movie, year, link, actor_id2) AS
-SELECT actor_list.id,
-       actor_list.name,
-       acting_list.movie_id,
-       movie_list.title,
-       movie_list.year,
-       actor_list2.name,
-       actor_list2.id
-FROM actor actor_list
-     JOIN acting acting_list
-          ON acting_list.actor_id = actor_list.id
-     JOIN movie movie_list
-          ON movie_list.id = acting_list.movie_id
+create or replace view graph(actor1_node, movie_edge, actor2_node) as
+SELECT acting_list1.actor_id,
+       acting_list1.movie_id,
+       acting_list2.actor_id
+FROM acting acting_list1
      JOIN acting acting_list2
-          ON acting_list2.movie_id = acting_list.movie_id
-     JOIN actor actor_list2
-          ON actor_list2.id = acting_list2.actor_id
-             WHERE acting_list2.actor_id != acting_list.actor_id
-                   AND actor_list.name = 'Tom Cruise';
+          ON acting_list1.movie_id = acting_list2.movie_id
+             AND acting_list1.actor_id != acting_list2.actor_id;
+
+create or replace function degree1_actors(actor_id int) returns setof record
+as $$
+-- we are going to declare all variables required for return value
+--
+BEGIN
+    -- scan through each entry in genre table, and if we have entry with
+    -- same movie id we will conjoin them together with the , character
+    RETURN QUERY SELECT * FROM graph WHERE graph.actor1_node = actor_id;
+END; $$ language plpgsql;
+
+create or replace function degree2_actors(actor_id int) returns setof record
+as $$
+-- we are going to declare all variables required for return value
+--
+BEGIN
+    -- scan through each entry in genre table, and if we have entry with
+    -- same movie id we will conjoin them together with the , character
+    RETURN QUERY SELECT DISTINCT graph1.actor1_node,
+                                 graph1.movie_edge,
+                                 graph1.actor2_node,
+                                 graph2.movie_edge,
+                                 graph2.actor2_node
+                 from graph graph1 JOIN graph graph2
+                                   ON graph1.actor2_node = graph2.actor1_node
+                                   AND graph1.actor1_node = actor_id
+                                   AND graph1.actor2_node != graph1.actor1_node
+                                   AND graph2.movie_edge != graph1.movie_edge;
+END; $$ language plpgsql;
+
+create or replace function degree3_actors(actor_id int) returns setof record
+as $$
+-- we are going to declare all variables required for return value
+--
+BEGIN
+    -- scan through each entry in genre table, and if we have entry with
+    -- same movie id we will conjoin them together with the , character
+    RETURN QUERY SELECT DISTINCT graph1.actor1_node,
+                                 graph1.movie_edge,
+                                 graph1.actor2_node,
+                                 graph2.movie_edge,
+                                 graph2.actor2_node,
+                                 graph3.movie_edge,
+                                 graph3.actor2_node
+                 from graph graph1 JOIN graph graph2
+                                   ON graph1.actor2_node = graph2.actor1_node
+                                   AND graph1.actor1_node = actor_id
+                                   AND graph1.actor2_node != graph1.actor1_node
+                                   AND graph2.movie_edge != graph1.movie_edge
+                                   JOIN graph graph3
+                                   ON graph2.actor2_node = graph3.actor1_node
+                                   AND graph3.actor2_node != graph2.actor1_node
+                                   AND graph3.movie_edge != graph2.movie_edge
+                                   AND graph3.movie_edge != graph2.movie_edge
+                                   AND graph3.movie_edge != graph1.movie_edge ;
+END; $$ language plpgsql;
 
 
-SELECT
-       actor_list.name,
-       movie_list.title,
-       degree2.*,
-       degree3.*
-FROM actor actor_list
-     JOIN acting acting_list
-          ON acting_list.actor_id = actor_list.id
-             AND actor_list.name = 'Brad Pitt'
-     JOIN movie movie_list
-          ON movie_list.id = acting_list.movie_id
-     JOIN acting acting_list2
-          ON acting_list2.movie_id = acting_list.movie_id
-     JOIN actor actor_list2
-          ON actor_list2.id = acting_list2.actor_id
-     JOIN (select degree2_actor1.name as actor1,
-                  movie.title,
-                  degree2_actor2.name as actor2,
-                  degree2_actor1.id
-           FROM acting degree2_acting1
-                JOIN actor degree2_actor1
-                     ON degree2_actor1.id = degree2_acting1.actor_id
-                JOIN movie
-                     ON movie.id = degree2_acting1.movie_id
-                JOIN acting degree2_acting2
-                     ON degree2_acting2.movie_id = degree2_acting1.movie_id
-                JOIN actor degree2_actor2
-                     ON degree2_actor2.id = degree2_acting2.actor_id
-                        AND degree2_actor2.name != degree2_actor1.name) as degree2
-          ON degree2.id = actor_list2.id
-             AND degree2.actor2 != actor_list.name
-             AND acting_list2.actor_id != acting_list.actor_id
-                    AND degree2.actor1 = actor_list2.name
-     JOIN (select movie.title,
-                  degree3_actor2.name as actor2,
-                  degree3_actor1.id
-           FROM acting degree3_acting1
-                JOIN actor degree3_actor1
-                     ON degree3_actor1.id = degree3_acting1.actor_id
-                JOIN movie
-                     ON movie.id = degree3_acting1.movie_id
-                JOIN acting degree3_acting2
-                     ON degree3_acting2.movie_id = degree3_acting1.movie_id
-                JOIN actor degree3_actor2
-                     ON degree3_actor2.id = degree3_acting2.actor_id
-                        AND degree3_actor2.name != degree3_actor1.name) as degree3
-          ON degree3.id = actor_list2.id
-             AND degree3.actor2 != actor_list.name
-             AND degree3.actor2 != degree2.actor1;
+select * from degree1_actors(3001) r(a1 int, ml int, a2 int);
+select * from degree2_actors(3001) r(a1 int, ml int, a2 int, m2 int, a3 int);
+select * from degree3_actors(3001) r(a1 int, ml int, a2 int, m2 int, a3 int,
+                                     m3 int, a4 int);
 
-
-
-
-SELECT DISTINCT graph1.actor1_node,
-                graph1.movie_edge as m3,
-                graph1.actor2_node,
-                graph2.movie_edge as m2,
-                graph2.actor2_node,
-                graph3.movie_edge as m1,
-                graph3.actor2_node as lastlink
-FROM graph graph1
-JOIN graph graph2
-    ON graph1.actor2_node = graph2.actor1_node
-        AND graph1.actor1_node = '3001'
-        AND graph2.actor2_node != graph1.actor1_node
-JOIN graph graph3
-    ON graph2.actor2_node = graph3.actor1_node
-       AND graph3.actor2_node != graph2.actor1_node
-        AND graph3.movie_edge != graph2.movie_edge
-        AND graph3.movie_edge != graph1.movie_edge
-JOIN graph graph4
-    ON graph3.actor2_node = graph4.actor1_node
-       AND graph4.actor2_node != graph3.actor1_node
-        AND graph4.movie_edge != graph3.movie_edge
-        AND graph4.movie_edge != graph2.movie_edge
-        AND graph4.movie_edge != graph1.movie_edge
+select * from degree1_actors(2624) r(a1 int, m1 int, a2 int);
 
 
 
+-- degree 1 match
+select * from degree1_actors(1598) d1(a1 int, m1 int, a2 int)
+                    WHERE d1.a2 = 612;
 
+-- degree 2 match
+select *
+from degree1_actors(539) d1(a1 int, m1 int, a2 int)
+JOIN degree1_actors(66) d11(a1 int, m1 int, a2 int)
+     ON d11.a2 = d1.a2;
 
-SELECT DISTINCT graph1.actor1_node as a1,
-                graph1.movie_edge as m1,
-                graph1.actor2_node as a2,
-                graph2.movie_edge as m2,
-                graph2.actor2_node as a3
-FROM graph graph1
-JOIN graph graph2
-    ON graph1.actor2_node = graph2.actor1_node
-        AND graph1.actor1_node = '3001'
-        AND graph2.actor2_node != graph1.actor1_node
-        AND graph2.actor2_node = '301'
-         -- AND graph2.actor2_node IS NULL
+-- degree 3 match
+select *
+from degree2_actors(301) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
+JOIN degree1_actors(1086) d1(a1 int, m1 int, a2 int)
+     ON d1.a2 = d2.a3;
 
+-- degree 4 match
+select *
+from degree2_actors(301) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
+JOIN degree2_actors(1086) d22(a1 int, m1 int, a2 int, m2 int, a3 int)
+     ON d2.a3 = d22.a3;
 
-JOIN graph graph3
-    ON graph2.actor2_node = graph3.actor1_node
-       AND graph3.actor2_node != graph2.actor1_node
-        AND graph3.movie_edge != graph2.movie_edge
-        AND graph3.movie_edge != graph1.movie_edge
-JOIN graph graph4
-    ON graph3.actor2_node = graph4.actor1_node
-       AND graph4.actor2_node != graph3.actor1_node
-        AND graph4.movie_edge != graph3.movie_edge
-        AND graph4.movie_edge != graph2.movie_edge
-        AND graph4.movie_edge != graph1.movie_edge
+-- degree 5 match
+select *
+from degree3_actors(301) d3(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
+JOIN degree2_actors(1086) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
+    ON d3.a4 = d2.a3;
 
-SELECT *
-FROM (SELECT DISTINCT * FROM acting WHERE actor_id = 301) AS a0
-INNER JOIN acting m0 ON a0.movie_id = m0.movie_id
-INNER JOIN acting a1 ON a1.actor_id = m0.actor_id
-                            AND a1.actor_id != a0.actor_id
-INNER JOIN acting m1 ON a1.movie_id = m1.movie_id
-                            AND a1.movie_id != a0.movie_id
-INNER JOIN acting a2 ON a2.actor_id = m1.actor_id
-                            AND a2.actor_id != a1.actor_id AND a2.actor_id != a0.actor_id
-INNER JOIN acting m2 ON a2.movie_id = m2.movie_id
-                            AND a2.movie_id != a1.movie_id AND a2.movie_id != a0.movie_id
-INNER JOIN acting a3 ON a3.actor_id = m2.actor_id
-                            AND a3.actor_id != a2.actor_id AND a3.actor_id != a1.actor_id AND a3.actor_id != a0.actor_id
-
-                    --AND degree2.actor2 != actor_list.name;;
-
+-- degree 6 match
+select *
+from degree3_actors(301) d3(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
+JOIN degree2_actors(1086) d33(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
+    ON d3.a4 = d33.a3;
