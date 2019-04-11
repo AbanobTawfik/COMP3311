@@ -209,99 +209,38 @@ ORDER BY genre_count DESC, keyword_count DESC,
 --                                TASK E && F                                 --
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW pathfinding_actors(actor_id, actor , movie_id,
-        movie, year, link, actor_id2) AS
-SELECT actor_list.id,
-       actor_list.name,
-       acting_list.movie_id,
-       movie_list.title,
-       movie_list.year,
-       actor_list2.name,
-       actor_list2.id
-FROM actor actor_list
-     JOIN acting acting_list
-          ON acting_list.actor_id = actor_list.id
-     JOIN movie movie_list
-          ON movie_list.id = acting_list.movie_id
+create or replace view graph(actor1_node, movie_edge, actor2_node) as
+SELECT acting_list1.actor_id,
+       acting_list1.movie_id,
+       acting_list2.actor_id
+FROM acting acting_list1
      JOIN acting acting_list2
-          ON acting_list2.movie_id = acting_list.movie_id
-     JOIN actor actor_list2
-          ON actor_list2.id = acting_list2.actor_id
-             WHERE acting_list2.actor_id != acting_list.actor_id
-                   AND actor_list.name = 'Tom Cruise';
+          ON acting_list1.movie_id = acting_list2.movie_id
+             AND acting_list1.actor_id != acting_list2.actor_id;
 
-select count(*) from actor;
-
-SELECT
-       actor_list.name,
-       movie_list.title,
-       degree2.*,
-       degree3.*
-FROM actor actor_list
-     JOIN acting acting_list
-          ON acting_list.actor_id = actor_list.id
-             AND actor_list.name = 'Brad Pitt'
-     JOIN movie movie_list
-          ON movie_list.id = acting_list.movie_id
-     JOIN acting acting_list2
-          ON acting_list2.movie_id = acting_list.movie_id
-     JOIN actor actor_list2
-          ON actor_list2.id = acting_list2.actor_id
-     JOIN (select degree2_actor1.name as actor1,
-                  movie.title,
-                  degree2_actor2.name as actor2,
-                  degree2_actor1.id
-           FROM acting degree2_acting1
-                JOIN actor degree2_actor1
-                     ON degree2_actor1.id = degree2_acting1.actor_id
-                JOIN movie
-                     ON movie.id = degree2_acting1.movie_id
-                JOIN acting degree2_acting2
-                     ON degree2_acting2.movie_id = degree2_acting1.movie_id
-                JOIN actor degree2_actor2
-                     ON degree2_actor2.id = degree2_acting2.actor_id
-                        AND degree2_actor2.name != degree2_actor1.name) as degree2
-          ON degree2.id = actor_list2.id
-             AND degree2.actor2 != actor_list.name
-             AND acting_list2.actor_id != acting_list.actor_id
-                    AND degree2.actor1 = actor_list2.name
-     JOIN (select movie.title,
-                  degree3_actor2.name as actor2,
-                  degree3_actor1.id
-           FROM acting degree3_acting1
-                JOIN actor degree3_actor1
-                     ON degree3_actor1.id = degree3_acting1.actor_id
-                JOIN movie
-                     ON movie.id = degree3_acting1.movie_id
-                JOIN acting degree3_acting2
-                     ON degree3_acting2.movie_id = degree3_acting1.movie_id
-                JOIN actor degree3_actor2
-                     ON degree3_actor2.id = degree3_acting2.actor_id
-                        AND degree3_actor2.name != degree3_actor1.name) as degree3
-          ON degree3.id = actor_list2.id
-             AND degree3.actor2 != actor_list.name
-             AND degree3.actor2 != degree2.actor1;
-
-
-
-
+create or replace view test_bill_clinton_chris_evans(degree0, link01, degree1, link12
+                                                      degree2, link23, degree3,
+                                                      link34, degree4, link45, degree5) as
 SELECT DISTINCT graph1.actor1_node,
-                graph1.movie_edge as m3,
-                graph1.actor2_node,
-                graph2.movie_edge as m2,
-                graph2.actor2_node,
-                graph3.movie_edge as m1,
-                graph3.actor2_node as lastlink
+       graph1.movie_edge,
+       graph1.actor2_node,
+       graph2.movie_edge,
+       graph2.actor2_node,
+       graph3.movie_edge,
+       --graph3.actor2_node,
+       sub1.*
 FROM graph graph1
 JOIN graph graph2
     ON graph1.actor2_node = graph2.actor1_node
-        AND graph1.actor1_node = '3001'
+        AND graph1.actor1_node = '301'
         AND graph2.actor2_node != graph1.actor1_node
+        AND graph2.movie_edge != graph1.movie_edge
 JOIN graph graph3
     ON graph2.actor2_node = graph3.actor1_node
        AND graph3.actor2_node != graph2.actor1_node
-        AND graph3.movie_edge != graph2.movie_edge
-        AND graph3.movie_edge != graph1.movie_edge
+       AND graph3.movie_edge != graph2.movie_edge
+       AND graph3.movie_edge != graph2.movie_edge
+       AND graph3.movie_edge != graph1.movie_edge
 JOIN graph graph4
     ON graph3.actor2_node = graph4.actor1_node
        AND graph4.actor2_node != graph3.actor1_node
@@ -309,49 +248,28 @@ JOIN graph graph4
         AND graph4.movie_edge != graph2.movie_edge
         AND graph4.movie_edge != graph1.movie_edge
 
-
-
-
-
-SELECT DISTINCT graph1.actor1_node as a1,
-                graph1.movie_edge as m1,
-                graph1.actor2_node as a2,
-                graph2.movie_edge as m2,
-                graph2.actor2_node as a3
+join (SELECT DISTINCT graph3.actor2_node as lastlink,
+       graph3.movie_edge,
+       graph2.actor2_node,
+       graph2.movie_edge,
+       graph1.actor2_node,
+       graph1.movie_edge,
+       graph1.actor1_node
 FROM graph graph1
 JOIN graph graph2
     ON graph1.actor2_node = graph2.actor1_node
-        AND graph1.actor1_node = '3001'
+        AND graph1.actor1_node = '3003'
         AND graph2.actor2_node != graph1.actor1_node
-        AND graph2.actor2_node = '301'
-         -- AND graph2.actor2_node IS NULL
-
-
+        AND graph2.movie_edge != graph1.movie_edge
 JOIN graph graph3
     ON graph2.actor2_node = graph3.actor1_node
        AND graph3.actor2_node != graph2.actor1_node
-        AND graph3.movie_edge != graph2.movie_edge
-        AND graph3.movie_edge != graph1.movie_edge
+       AND graph3.movie_edge != graph2.movie_edge
+       AND graph3.movie_edge != graph1.movie_edge
 JOIN graph graph4
     ON graph3.actor2_node = graph4.actor1_node
        AND graph4.actor2_node != graph3.actor1_node
         AND graph4.movie_edge != graph3.movie_edge
         AND graph4.movie_edge != graph2.movie_edge
-        AND graph4.movie_edge != graph1.movie_edge
-
-SELECT *
-FROM (SELECT DISTINCT * FROM acting WHERE actor_id = 301) AS a0
-INNER JOIN acting m0 ON a0.movie_id = m0.movie_id
-INNER JOIN acting a1 ON a1.actor_id = m0.actor_id
-                            AND a1.actor_id != a0.actor_id
-INNER JOIN acting m1 ON a1.movie_id = m1.movie_id
-                            AND a1.movie_id != a0.movie_id
-INNER JOIN acting a2 ON a2.actor_id = m1.actor_id
-                            AND a2.actor_id != a1.actor_id AND a2.actor_id != a0.actor_id
-INNER JOIN acting m2 ON a2.movie_id = m2.movie_id
-                            AND a2.movie_id != a1.movie_id AND a2.movie_id != a0.movie_id
-INNER JOIN acting a3 ON a3.actor_id = m2.actor_id
-                            AND a3.actor_id != a2.actor_id AND a3.actor_id != a1.actor_id AND a3.actor_id != a0.actor_id
-
-                    --AND degree2.actor2 != actor_list.name;;
-
+        AND graph4.movie_edge != graph1.movie_edge) as sub1
+    ON sub1.lastlink = graph3.actor2_node;

@@ -1,0 +1,140 @@
+#!/usr/bin/php
+<?php
+
+////////////////////////////////////////////////////////////////////////////////
+//                                TASK F                                      //
+////////////////////////////////////////////////////////////////////////////////
+//
+// The toprank script takes in 3 or 4 commandline arguments:
+// ./toprank K StartYear EndYear
+// Or:
+// ./toprank Genres K StartYear EndYear
+// Where Genres is a list of genres separated by '&', K is the top K movies
+// Ranked by IMDB score and then by the number of votes
+// (both in descending order) between (and including) StartYear and EndYear,
+// With 1 <= K <= 1000, 1900 < StartYear <= EndYear < 2020 and your program
+// Will not be tested with a list of more than 8 genres. We interpret '&' as
+// conjunction, i.e., the selected movies shall contain all the specified
+// Genres. When Genres is not provided (when your program takes in 3 arguments),
+// Perform the same ranking but on movies with any genres. Do not include any
+// Movie titles with empty year.
+//
+
+// include the common PHP code file
+require("a2.php");
+
+// PROGRAM BODY BEGINS
+
+$usage = "Usage: $argv[0] Actor lower_bound upper_bound";
+$db = dbConnect(DB_CONNECTION);
+
+// Check arguments
+if (count($argv) != 4){ 
+  exit("$usage\n");
+}
+
+$start = $argv[1];
+$lower_bound = $argv[2];
+$upper_bound = $argv[3];
+if($lower_bound > $upper_bound){
+	exit("1 =< lower_bound <= upper_bound <= 6");
+}
+if($lower_bound < 1 || $lower_bound > 6 || $upper_bound < 1 || $upper_bound > 6){
+	exit("1 =< lower_bound <= upper_bound <= 6");
+}
+
+$q = "SELECT id from actor where name ILIKE '$start' LIMIT 1;";
+$r = dbQuery($db, mkSQL($q, $start));
+$t = dbNext($r);
+if(empty($t[0])){
+	exit("$start is not an actor\n");
+}
+$start = $t[0];
+
+$q = "SELECT * from pathfinding_actors;";
+$r = dbQuery($db, mkSQL($q));
+// Iterate through the results and create graph which will be used for path finding
+$graph = array();
+while (($t = dbNext($r))) {
+  if(empty($graph[$t[0]])){
+  	$graph[$t[0]] = array();
+  }
+  if(empty($graph[$t[6]])){
+  	$graph[$t[6]] = array();  
+  }
+  if(empty($graph[$t[0]][$t[6]])){
+  	 $graph[$t[0]][$t[6]] = array();
+  }
+  if(empty($graph[$t[6]][$t[0]])){
+  	 $graph[$t[6]][$t[0]] = array();
+  }
+  if(empty($t[4])){
+  	array_push($graph[$t[0]][$t[6]], $t[2]);
+  	array_push($graph[$t[6]][$t[0]], $t[2]);
+  }else{
+  	array_push($graph[$t[0]][$t[6]], array($t[2],$t[4]));
+  	array_push($graph[$t[6]][$t[0]], array($t[2],$t[4]));
+  }
+}
+
+$q = "SELECT * from actor where id != $start;";
+$r = dbQuery($db, mkSQL($q, $start));
+$actor_degree = array();
+$to_visit = array();
+$found_shortest_paths = false;
+$all_bounded_actors = array();
+//$visited = array();
+$seen_actor = array();
+//$visited_path = array();
+$ida = 1;
+while($ida <= $upper_bound){
+	$current = array($start);
+	array_push($to_visit, $current);
+	while(sizeof($to_visit) > 0){
+		$current = array_pop($to_visit);
+		//echo "branch factor - ".sizeof($to_visit)."\n";
+		//echo "branch factor actors- ".sizeof($all_bounded_actors)."\n";
+		//$new_array = $current;
+		$inspection_node = end($current);
+		//$p = sizeof($current);
+		//print_r($current);	
+		if(sizeof($current) <= $ida){
+			foreach($graph[$inspection_node] as $node => $val){
+				if(!in_array($node, $current)){
+					$new_array = $current;
+					array_push($new_array, $node);
+					if(!in_array($current, $new_array)){
+						if(sizeof($current) >= $lower_bound && !in_array($node, $seen_actor)){
+							$actor = $node;
+							$length = sizeof($current);
+							array_push($all_bounded_actors,array($actor, $length));
+						}
+						array_push($seen_actor, $node);
+						//unset($node);
+						array_push($to_visit, $new_array);
+						//unset($new_array);
+					}
+				}
+			} 
+		}
+	}
+	$to_visit = array();
+	$ida++;
+	echo "pushing depth to $ida\n";
+}
+
+$i = 1;
+$visited = array();
+foreach($all_bounded_actors as $node => $val){
+	if((!in_array($val[0], $visited)) && (($val[1] >= $lower_bound) && ($val[1] <= $upper_bound))){
+		$name = actor_from_id($val[0]);
+		$count = $val[1];
+		//echo "$i. $name ($count)\n";
+		$i++;
+		array_push($visited, $val[0]);
+	}
+}
+//print_r($all_bounded_actors);
+
+
+?>
