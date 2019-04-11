@@ -316,4 +316,4 @@ JOIN degree2_actors(1086) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
 select *
 from degree3_actors(301) d3(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
 JOIN degree2_actors(1086) d33(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
-    ON d3.a4 = d33.a3;
+    ON d3.a4 = d33.a3;s
