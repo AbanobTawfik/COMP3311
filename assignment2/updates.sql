@@ -244,7 +244,8 @@ BEGIN
                                    ON graph1.actor2_node = graph2.actor1_node
                                    AND graph1.actor1_node = actor_id
                                    AND graph1.actor2_node != graph1.actor1_node
-                                   AND graph2.movie_edge != graph1.movie_edge;
+                                   AND graph2.movie_edge != graph1.movie_edge
+                                   AND graph2.actor2_node != graph1.actor1_node;
 END; $$ language plpgsql;
 
 create or replace function degree3_actors(actor_id int) returns setof record
@@ -265,55 +266,12 @@ BEGIN
                                    ON graph1.actor2_node = graph2.actor1_node
                                    AND graph1.actor1_node = actor_id
                                    AND graph1.actor2_node != graph1.actor1_node
+                                   AND graph2.actor2_node != graph1.actor1_node
                                    AND graph2.movie_edge != graph1.movie_edge
                                    JOIN graph graph3
                                    ON graph2.actor2_node = graph3.actor1_node
                                    AND graph3.actor2_node != graph2.actor1_node
-                                   AND graph3.movie_edge != graph2.movie_edge
+                                   AND graph3.actor2_node != graph1.actor1_node
                                    AND graph3.movie_edge != graph2.movie_edge
                                    AND graph3.movie_edge != graph1.movie_edge;
 END; $$ language plpgsql;
-
-
-select * from degree1_actors(3001) r(a1 int, ml int, a2 int);
-select * from degree2_actors(3001) r(a1 int, ml int, a2 int, m2 int, a3 int);
-select * from degree3_actors(3001) r(a1 int, ml int, a2 int, m2 int, a3 int,
-                                     m3 int, a4 int);
-
-select * from degree1_actors(2624) r(a1 int, m1 int, a2 int);
-
-
-
--- degree 1 match
-select * from degree1_actors(1598) d1(a1 int, m1 int, a2 int)
-                    WHERE d1.a2 = 612;
-
--- degree 2 match
-select *
-from degree1_actors(539) d1(a1 int, m1 int, a2 int)
-JOIN degree1_actors(66) d11(a1 int, m1 int, a2 int)
-     ON d11.a2 = d1.a2;
-
--- degree 3 match
-select *
-from degree2_actors(301) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
-JOIN degree1_actors(1086) d1(a1 int, m1 int, a2 int)
-     ON d1.a2 = d2.a3;
-
--- degree 4 match
-select *
-from degree2_actors(301) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
-JOIN degree2_actors(1086) d22(a1 int, m1 int, a2 int, m2 int, a3 int)
-     ON d2.a3 = d22.a3;
-
--- degree 5 match
-select *
-from degree3_actors(301) d3(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
-JOIN degree2_actors(1086) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
-    ON d3.a4 = d2.a3;
-
--- degree 6 match
-select *
-from degree3_actors(301) d3(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
-JOIN degree2_actors(1086) d33(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
-    ON d3.a4 = d33.a3;s

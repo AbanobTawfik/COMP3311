@@ -59,7 +59,8 @@ if($start == $goal){
 $found_shortest  = false;
 $shortest_paths = array();
 // DEGREE 1 check
-$q = "SELECT DISTINCT * from graph where graph.actor1_node = $start AND graph.actor2_node = $goal;";
+$q = "SELECT * FROM degree1_actors($start) d1(a1 int, m1 int, a2 int)
+                    WHERE d1.a2 = $goal;";
 $r = dbQuery($db, mkSQL($q));
 
 while($t = dbNext($r)){
@@ -76,12 +77,10 @@ if($found_shortest == true){
 	return;
 }
 // DEGREE 2 check
-$q = "SELECT DISTINCT * from graph graph1 JOIN graph graph2 
-										       ON graph1.actor2_node = graph2.actor1_node
-										       AND graph1.actor1_node = $start
-										       AND graph1.actor2_node != graph1.actor1_node
-										       AND graph2.movie_edge != graph1.movie_edge
-										       AND graph2.actor2_node = $goal;";
+$q = "SELECT *
+	  FROM degree1_actors($start) d1(a1 int, m1 int, a2 int)
+	  JOIN degree1_actors($goal) d11(a1 int, m1 int, a2 int)
+	     ON d11.a2 = d1.a2;";
 $r = dbQuery($db, mkSQL($q));
 
 while($t = dbNext($r)){
@@ -102,24 +101,10 @@ if($found_shortest == true){
 }
 
 // DEGREE 3 check
-$q = "SELECT DISTINCT  graph1.actor1_node,
-				       graph1.movie_edge,
-				       graph1.actor2_node,
-				       graph2.movie_edge,
-					   sub1.*
-					   FROM graph graph1
-					   JOIN graph graph2
-					   		ON graph1.actor2_node = graph2.actor1_node
-						       AND graph1.actor1_node = '2624'
-						       AND graph2.actor2_node != graph1.actor1_node
-						       AND graph2.movie_edge != graph1.movie_edge
-					   JOIN (SELECT DISTINCT
-						       graph1.actor2_node as lastlink,
-						       graph1.movie_edge,
-						       graph1.actor1_node
-					    FROM graph graph1
-						        WHERE graph1.actor1_node = '3698') as sub1
-						    ON sub1.lastlink = graph2.actor2_node;";
+$q = "SELECT d2.a1, d2.m1, d2.a2, d2.m2, d2.a3, d1.m1, d1.a1
+	  FROM degree2_actors($start) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
+	  JOIN degree1_actors($goal) d1(a1 int, m1 int, a2 int)
+		 	ON d1.a2 = d2.a3;";
 $r = dbQuery($db, mkSQL($q));
 
 while($t = dbNext($r)){
@@ -142,5 +127,151 @@ if($found_shortest == true){
 	return;
 }
 
+// DEGREE 4 check
+$q = "SELECT d2.a1, d2.m1, d2.a2, d2.m2, d2.a3, d22.m2, d22.a2, d22.m1, d22.a1
+	  FROM degree2_actors($start) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
+	  JOIN degree2_actors($goal) d22(a1 int, m1 int, a2 int, m2 int, a3 int)
+		   ON d2.a3 = d22.a3;";
+$r = dbQuery($db, mkSQL($q));
 
+while($t = dbNext($r)){
+	$found_shortest = true;
+	$actor0 = actor_from_id($t[0]);
+	$movie_link01 = movie_from_id($t[1]);
+	$actor1 = actor_from_id($t[2]);
+	$movie_link12 = movie_from_id($t[3]);
+	$actor2 = actor_from_id($t[4]);
+	$movie_link23 = movie_from_id($t[5]);
+	$actor3 = actor_from_id($t[6]);
+	$movie_link34 = movie_from_id($t[7]);
+	$actor4 = actor_from_id($t[8]);
+	
+	array_push($shortest_paths, $actor0." was in ".$movie_link01." with ".$actor1."; ".$actor1.
+										 " was in ".$movie_link12. " with ".$actor2."; ".$actor2." was in ".
+										 $movie_link23." with ".$actor3."; ".$actor3." was in ".$movie_link34." with ".
+										 $actor4 
+										 ."\n");
+}
+
+if($found_shortest == true){
+	print_shortest_paths($shortest_paths);
+	return;
+}
+
+// DEGREE 2 check
+$q = "SELECT *
+	  FROM degree1_actors($start) d1(a1 int, m1 int, a2 int)
+	  JOIN degree1_actors($goal) d11(a1 int, m1 int, a2 int)
+	     ON d11.a2 = d1.a2;";
+$r = dbQuery($db, mkSQL($q));
+
+while($t = dbNext($r)){
+	$found_shortest = true;
+	$actor0 = actor_from_id($t[0]);
+	$movie_link01 = movie_from_id($t[1]);
+	$actor1 = actor_from_id($t[2]);
+	$movie_link12 = movie_from_id($t[4]);
+	$actor2 = actor_from_id($t[5]);
+	
+	array_push($shortest_paths, $actor0." was in ".$movie_link01." with ".$actor1."; ".$actor1.
+										 " was in ".$movie_link12. " with ".$actor2."\n");
+}
+
+if($found_shortest == true){
+	print_shortest_paths($shortest_paths);
+	return;
+}
+
+// DEGREE 3 check
+$q = "SELECT d2.a1, d2.m1, d2.a2, d2.m2, d2.a3, d1.m1, d1.a1
+	  FROM degree2_actors($start) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
+	  JOIN degree1_actors($goal) d1(a1 int, m1 int, a2 int)
+		 	ON d1.a2 = d2.a3;";
+$r = dbQuery($db, mkSQL($q));
+
+while($t = dbNext($r)){
+	$found_shortest = true;
+	$actor0 = actor_from_id($t[0]);
+	$movie_link01 = movie_from_id($t[1]);
+	$actor1 = actor_from_id($t[2]);
+	$movie_link12 = movie_from_id($t[3]);
+	$actor2 = actor_from_id($t[4]);
+	$movie_link23 = movie_from_id($t[5]);
+	$actor3 = actor_from_id($t[6]);
+	
+	array_push($shortest_paths, $actor0." was in ".$movie_link01." with ".$actor1."; ".$actor1.
+										 " was in ".$movie_link12. " with ".$actor2."; ".$actor2." was in ".
+										 $movie_link23." with ".$actor3."\n");
+}
+
+if($found_shortest == true){
+	print_shortest_paths($shortest_paths);
+	return;
+}
+
+// DEGREE 5 check
+$q = "SELECT d3.a1, d3.m1, d3.a2, d3.m2, d3.a3, d3.m3, d3.a4, d2.m2, d2.a2, d2.m1, d2.a1
+	  FROM degree3_actors($start) d3(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
+      JOIN degree2_actors($goal) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
+           ON d3.a4 = d2.a3;";
+$r = dbQuery($db, mkSQL($q));
+
+while($t = dbNext($r)){
+	$found_shortest = true;
+	$actor0 = actor_from_id($t[0]);
+	$movie_link01 = movie_from_id($t[1]);
+	$actor1 = actor_from_id($t[2]);
+	$movie_link12 = movie_from_id($t[3]);
+	$actor2 = actor_from_id($t[4]);
+	$movie_link23 = movie_from_id($t[5]);
+	$actor3 = actor_from_id($t[6]);
+	$movie_link34 = movie_from_id($t[7]);
+	$actor4 = actor_from_id($t[8]);
+	$movie_link45 = movie_from_id($t[9]);
+	$actor5 = actor_from_id($t[10]);
+	
+	array_push($shortest_paths, $actor0." was in ".$movie_link01." with ".$actor1."; ".$actor1.
+										 " was in ".$movie_link12. " with ".$actor2."; ".$actor2." was in ".
+										 $movie_link23." with ".$actor3."; ".$actor3." was in ".$movie_link34." with ".
+										 $actor4."; ".$actor4." was in ".$movie_link45." with ".$actor5."\n");
+}
+
+if($found_shortest == true){
+	print_shortest_paths($shortest_paths);
+	return;
+}
+
+// DEGREE 6 check
+$q = "SELECT d3.a1, d3.m1, d3.a2, d3.m2, d3.a3, d3.m3, d3.a4, d33.m3, d33.a3, d33.m2, d33.a2, d33.m1, d33.a1
+	  FROM degree3_actors($start) d3(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
+	  JOIN degree3_actors($goal) d33(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
+		    ON d3.a4 = d33.a4;";
+$r = dbQuery($db, mkSQL($q));
+
+while($t = dbNext($r)){
+	$found_shortest = true;
+	$actor0 = actor_from_id($t[0]);
+	$movie_link01 = movie_from_id($t[1]);
+	$actor1 = actor_from_id($t[2]);
+	$movie_link12 = movie_from_id($t[3]);
+	$actor2 = actor_from_id($t[4]);
+	$movie_link23 = movie_from_id($t[5]);
+	$actor3 = actor_from_id($t[6]);
+	$movie_link34 = movie_from_id($t[7]);
+	$actor4 = actor_from_id($t[8]);
+	$movie_link45 = movie_from_id($t[9]);
+	$actor5 = actor_from_id($t[10]);
+	$movie_link56 = movie_from_id($t[11]);
+	$actor6 = actor_from_id($t[12]);
+	array_push($shortest_paths, $actor0." was in ".$movie_link01." with ".$actor1."; ".$actor1.
+										 " was in ".$movie_link12. " with ".$actor2."; ".$actor2." was in ".
+										 $movie_link23." with ".$actor3."; ".$actor3." was in ".$movie_link34." with ".
+										 $actor4."; ".$actor4." was in ".$movie_link45." with ".$actor5."; ".$actor5." was in ".
+										 $movie_link56." with ".$actor6 ."\n");
+}
+
+if($found_shortest == true){
+	print_shortest_paths($shortest_paths);
+	return;
+}
 ?>
