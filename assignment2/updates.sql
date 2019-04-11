@@ -230,7 +230,6 @@ FROM actor actor_list
              WHERE acting_list2.actor_id != acting_list.actor_id
                    AND actor_list.name = 'Tom Cruise';
 
-select count(*) from actor;
 
 SELECT
        actor_list.name,

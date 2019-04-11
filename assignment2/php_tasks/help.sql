@@ -222,7 +222,7 @@ join (SELECT DISTINCT graph3.actor2_node as lastlink,
 FROM graph graph1
 JOIN graph graph2
     ON graph1.actor2_node = graph2.actor1_node
-        AND graph1.actor1_node = '3003'
+        AND graph1.actor1_node = '3001'
         AND graph2.actor2_node != graph1.actor1_node
         AND graph2.movie_edge != graph1.movie_edge
 JOIN graph graph3
@@ -236,4 +236,395 @@ JOIN graph graph4
         AND graph4.movie_edge != graph3.movie_edge
         AND graph4.movie_edge != graph2.movie_edge
         AND graph4.movie_edge != graph1.movie_edge) as sub1
+    ON sub1.lastlink = graph3.actor2_node;
+
+
+SELECT DISTINCT graph1.actor1_node,
+       graph1.movie_edge,
+       graph1.actor2_node,
+       graph2.movie_edge,
+       graph2.actor2_node,
+       graph3.movie_edge,
+       --graph3.actor2_node
+       sub1.*
+FROM graph graph1
+JOIN graph graph2
+    ON graph1.actor2_node = graph2.actor1_node
+        AND graph1.actor1_node = '1598'
+        AND graph2.actor2_node != graph1.actor1_node
+        AND graph2.movie_edge != graph1.movie_edge
+JOIN graph graph3
+    ON graph2.actor2_node = graph3.actor1_node
+       AND graph3.actor2_node != graph2.actor1_node
+       AND graph3.movie_edge != graph2.movie_edge
+       AND graph3.movie_edge != graph2.movie_edge
+       AND graph3.movie_edge != graph1.movie_edge
+JOIN graph graph4
+    ON graph3.actor2_node = graph4.actor1_node
+       AND graph4.actor2_node != graph3.actor1_node
+        AND graph4.movie_edge != graph3.movie_edge
+        AND graph4.movie_edge != graph2.movie_edge
+        AND graph4.movie_edge != graph1.movie_edge
+join (SELECT DISTINCT
+       graph2.actor2_node as lastlink,
+       graph2.movie_edge,
+       graph1.actor2_node ,
+       graph1.movie_edge,
+       graph1.actor1_node
+FROM graph graph1
+JOIN graph graph2
+    ON graph1.actor2_node = graph2.actor1_node
+        AND graph1.actor1_node = '2624'
+        AND graph2.actor2_node != graph1.actor1_node
+        AND graph2.movie_edge != graph1.movie_edge
+JOIN graph graph3
+    ON graph2.actor2_node = graph3.actor1_node
+       AND graph3.actor2_node != graph2.actor1_node
+       AND graph3.movie_edge != graph2.movie_edge
+       AND graph3.movie_edge != graph1.movie_edge) as sub1
+    ON sub1.lastlink = graph3.actor2_node;
+
+
+SELECT DISTINCT
+       graph2.actor2_node as lastlinke,
+       graph2.movie_edge,
+       graph1.actor2_node,
+       graph1.movie_edge,
+       graph1.actor1_node
+FROM graph graph1
+JOIN graph graph2
+    ON graph1.actor2_node = graph2.actor1_node
+        AND graph1.actor1_node = '2624'
+        AND graph2.actor2_node != graph1.actor1_node
+        AND graph2.movie_edge != graph1.movie_edge;
+
+select distinct * from graph graph1 join graph graph2
+    on graph1.actor2_node = graph2.actor1_node
+    and graph1.actor1_node = 539
+    and graph1.actor2_node != graph1.actor1_node
+    and graph2.movie_edge != graph1.movie_edge
+    and graph2.actor2_node = 66;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SELECT DISTINCT graph1.actor1_node,
+       graph1.movie_edge,
+       graph1.actor2_node,
+       graph2.movie_edge,
+       graph2.actor2_node
+FROM graph graph1
+JOIN graph graph2
+    ON graph1.actor2_node = graph2.actor1_node
+        AND graph1.actor1_node = '1598'
+        AND graph2.actor2_node != graph1.actor1_node
+        AND graph2.movie_edge != graph1.movie_edge
+join (SELECT DISTINCT
+       graph2.actor2_node,
+       graph2.movie_edge,
+       graph1.actor2_node as lastlink,
+       graph1.movie_edge,
+       graph1.actor1_node
+FROM graph graph1
+JOIN graph graph2
+    ON graph1.actor2_node = graph2.actor1_node
+        AND graph1.actor1_node = '2624'
+        AND graph2.actor2_node != graph1.actor1_node
+        AND graph2.movie_edge != graph1.movie_edge
+JOIN graph graph3
+    ON graph2.actor2_node = graph3.actor1_node
+       AND graph3.actor2_node != graph2.actor1_node
+       AND graph3.movie_edge != graph2.movie_edge
+       AND graph3.movie_edge != graph1.movie_edge) as sub1
+    ON sub1.lastlink = graph3.actor2_node;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SELECT DISTINCT graph1.actor1_node,
+       graph1.movie_edge,
+       graph1.actor2_node,
+       graph2.movie_edge,
+       graph2.actor2_node,
+    sub1.*
+       --sub1.*
+FROM graph graph1
+JOIN graph graph2
+    ON graph1.actor2_node = graph2.actor1_node
+        AND graph1.actor1_node = '2624'
+        AND graph2.actor2_node != graph1.actor1_node
+        AND graph2.movie_edge != graph1.movie_edge
+join (SELECT DISTINCT
+       graph1.actor2_node as lastlink,
+       graph1.movie_edge,
+       graph1.actor1_node
+FROM graph graph1
+        where graph1.actor1_node = '3698') as sub1
+    ON sub1.lastlink = graph2.actor2_node;
+
+
+
+
+
+
+
+
+
+
+SELECT DISTINCT graph1.actor1_node,
+       graph1.movie_edge,
+       graph1.actor2_node,
+       graph2.movie_edge,
+       graph2.actor2_node,
+       graph3.movie_edge,
+       graph3.actor2_node
+       --sub1.*
+FROM graph graph1
+JOIN graph graph2
+    ON graph1.actor2_node = graph2.actor1_node
+        AND graph1.actor1_node = '2624'
+        AND graph2.actor2_node != graph1.actor1_node
+        AND graph2.movie_edge != graph1.movie_edge
+JOIN graph graph3
+    ON graph2.actor2_node = graph3.actor1_node
+       AND graph3.actor2_node != graph2.actor1_node
+       AND graph3.movie_edge != graph2.movie_edge
+       AND graph3.movie_edge != graph2.movie_edge
+       AND graph3.movie_edge != graph1.movie_edge
+        --AND graph3.actor2_node = 3698
+JOIN graph graph4
+    ON graph3.actor2_node = graph4.actor1_node
+       AND graph4.actor2_node != graph3.actor1_node
+        AND graph4.movie_edge != graph3.movie_edge
+        AND graph4.movie_edge != graph2.movie_edge
+        AND graph4.movie_edge != graph1.movie_edge
+        ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SELECT DISTINCT  graph1.actor1_node,
+                   graph1.movie_edge,
+                   graph1.actor2_node,
+                   graph2.movie_edge
+                   FROM graph graph1
+                   JOIN graph graph2
+                        ON graph1.actor2_node = graph2.actor1_node
+                           AND graph1.actor1_node = '2624'
+                           AND graph2.actor2_node != graph1.actor1_node
+                           AND graph2.movie_edge != graph1.movie_edge
+                   JOIN (SELECT DISTINCT
+                           graph1.actor2_node as lastlink,
+                           graph1.movie_edge,
+                           graph1.actor1_node
+                    FROM graph graph1
+                            WHERE graph1.actor1_node = '3698') as sub1
+                        ON sub1.lastlink = graph2.actor2_node;
+
+
+
+create or replace function degree1_actors(actor_id int) returns setof record
+as $$
+-- we are going to declare all variables required for return value
+--
+BEGIN
+    -- scan through each entry in genre table, and if we have entry with
+    -- same movie id we will conjoin them together with the , character
+    RETURN QUERY SELECT * FROM graph WHERE graph.actor1_node = actor_id;
+END; $$ language plpgsql;
+
+create or replace function degree2_actors(actor_id int) returns setof record
+as $$
+-- we are going to declare all variables required for return value
+--
+BEGIN
+    -- scan through each entry in genre table, and if we have entry with
+    -- same movie id we will conjoin them together with the , character
+    RETURN QUERY SELECT DISTINCT graph1.actor1_node,
+                                 graph1.movie_edge,
+                                 graph1.actor2_node,
+                                 graph2.movie_edge,
+                                 graph2.actor2_node
+                 from graph graph1 JOIN graph graph2
+                                   ON graph1.actor2_node = graph2.actor1_node
+                                   AND graph1.actor1_node = actor_id
+                                   AND graph1.actor2_node != graph1.actor1_node
+                                   AND graph2.movie_edge != graph1.movie_edge;
+END; $$ language plpgsql;
+
+create or replace function degree3_actors(actor_id int) returns setof record
+as $$
+-- we are going to declare all variables required for return value
+--
+BEGIN
+    -- scan through each entry in genre table, and if we have entry with
+    -- same movie id we will conjoin them together with the , character
+    RETURN QUERY SELECT DISTINCT graph1.actor1_node,
+                                 graph1.movie_edge,
+                                 graph1.actor2_node,
+                                 graph2.movie_edge,
+                                 graph2.actor2_node,
+                                 graph3.movie_edge,
+                                 graph3.actor2_node
+                 from graph graph1 JOIN graph graph2
+                                   ON graph1.actor2_node = graph2.actor1_node
+                                   AND graph1.actor1_node = actor_id
+                                   AND graph1.actor2_node != graph1.actor1_node
+                                   AND graph2.movie_edge != graph1.movie_edge
+                                   JOIN graph graph3
+                                   ON graph2.actor2_node = graph3.actor1_node
+                                   AND graph3.actor2_node != graph2.actor1_node
+                                   AND graph3.movie_edge != graph2.movie_edge
+                                   AND graph3.movie_edge != graph2.movie_edge
+                                   AND graph3.movie_edge != graph1.movie_edge ;
+END; $$ language plpgsql;
+
+
+select * from degree1_actors(3001) r(a1 int, ml int, a2 int);
+select * from degree2_actors(3001) r(a1 int, ml int, a2 int, m2 int, a3 int);
+select * from degree3_actors(3001) r(a1 int, ml int, a2 int, m2 int, a3 int,
+                                     m3 int, a4 int);
+
+select * from degree1_actors(2624) r(a1 int, m1 int, a2 int);
+
+
+
+-- degree 1 match
+select * from degree1_actors(1598) d1(a1 int, m1 int, a2 int)
+                    WHERE d1.a2 = 612;
+
+-- degree 2 match
+select *
+from degree1_actors(539) d1(a1 int, m1 int, a2 int)
+JOIN degree1_actors(66) d11(a1 int, m1 int, a2 int)
+     ON d11.a2 = d1.a2;
+
+-- degree 3 match
+select *
+from degree2_actors(301) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
+JOIN degree1_actors(1086) d1(a1 int, m1 int, a2 int)
+     ON d1.a2 = d2.a3;
+
+-- degree 4 match
+select *
+from degree2_actors(301) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
+JOIN degree2_actors(1086) d22(a1 int, m1 int, a2 int, m2 int, a3 int)
+     ON d2.a3 = d22.a3;
+
+-- degree 5 match
+select *
+from degree3_actors(301) d3(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
+JOIN degree2_actors(1086) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
+    ON d3.a4 = d2.a3;
+
+-- degree 6 match
+select *
+from degree3_actors(301) d3(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
+JOIN degree2_actors(1086) d33(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
+    ON d3.a4 = d33.a3;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SELECT DISTINCT graph1.actor1_node,
+       graph1.movie_edge,
+       graph1.actor2_node,
+       graph2.movie_edge,
+       graph2.actor2_node,
+       graph3.movie_edge,
+       --graph3.actor2_node
+       sub1.*
+FROM graph graph1
+JOIN graph graph2
+    ON graph1.actor2_node = graph2.actor1_node
+        AND graph1.actor1_node = '1598'
+        AND graph2.actor2_node != graph1.actor1_node
+        AND graph2.movie_edge != graph1.movie_edge
+JOIN graph graph3
+    ON graph2.actor2_node = graph3.actor1_node
+       AND graph3.actor2_node != graph2.actor1_node
+       AND graph3.movie_edge != graph2.movie_edge
+       AND graph3.movie_edge != graph2.movie_edge
+       AND graph3.movie_edge != graph1.movie_edge
+JOIN graph graph4
+    ON graph3.actor2_node = graph4.actor1_node
+       AND graph4.actor2_node != graph3.actor1_node
+        AND graph4.movie_edge != graph3.movie_edge
+        AND graph4.movie_edge != graph2.movie_edge
+        AND graph4.movie_edge != graph1.movie_edge
+join (SELECT DISTINCT
+       graph2.actor2_node as lastlink,
+       graph2.movie_edge,
+       graph1.actor2_node,
+       graph1.movie_edge,
+       graph1.actor1_node
+FROM graph graph1
+
+JOIN graph graph2
+    ON graph1.actor2_node = graph2.actor1_node
+        AND graph1.actor1_node = '2624'
+        AND graph2.actor2_node != graph1.actor1_node
+        AND graph2.movie_edge != graph1.movie_edge
+JOIN graph graph3
+    ON graph2.actor2_node = graph3.actor1_node
+       AND graph3.actor2_node != graph2.actor1_node
+       AND graph3.movie_edge != graph2.movie_edge
+       AND graph3.movie_edge != graph1.movie_edge) as sub1
     ON sub1.lastlink = graph3.actor2_node;
