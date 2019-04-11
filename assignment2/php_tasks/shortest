@@ -1,4 +1,3 @@
-
 #!/usr/bin/php
 <?php
 
@@ -90,7 +89,7 @@ while($t = dbNext($r)){
     $movie_link01 = movie_from_id($t[1]);
     $actor1 = actor_from_id($t[2]);
     $movie_link12 = movie_from_id($t[4]);
-    $actor2 = actor_from_id($t[5]);
+    $actor2 = actor_from_id($t[3]);
     
     array_push($shortest_paths, $actor0." was in ".$movie_link01." with ".$actor1."; ".$actor1.
                                          " was in ".$movie_link12. " with ".$actor2."\n");

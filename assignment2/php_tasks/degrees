@@ -42,97 +42,92 @@ if($lower_bound > $upper_bound){
 if($lower_bound < 1 || $lower_bound > 6 || $upper_bound < 1 || $upper_bound > 6){
 	exit("1 =< lower_bound <= upper_bound <= 6");
 }
-
 $q = "SELECT id from actor where name ILIKE '$start' LIMIT 1;";
 $r = dbQuery($db, mkSQL($q, $start));
 $t = dbNext($r);
+
 if(empty($t[0])){
 	exit("$start is not an actor\n");
 }
-$start = $t[0];
 
-$q = "SELECT * from pathfinding_actors;";
+$start = $t[0];
+$q = "SELECT actor1_node, actor2_node from graph;";
 $r = dbQuery($db, mkSQL($q));
-// Iterate through the results and create graph which will be used for path finding
 $graph = array();
 while (($t = dbNext($r))) {
-  if(empty($graph[$t[0]])){
-  	$graph[$t[0]] = array();
-  }
-  if(empty($graph[$t[6]])){
-  	$graph[$t[6]] = array();  
-  }
-  if(empty($graph[$t[0]][$t[6]])){
-  	 $graph[$t[0]][$t[6]] = array();
-  }
-  if(empty($graph[$t[6]][$t[0]])){
-  	 $graph[$t[6]][$t[0]] = array();
-  }
-  if(empty($t[4])){
-  	array_push($graph[$t[0]][$t[6]], $t[2]);
-  	array_push($graph[$t[6]][$t[0]], $t[2]);
-  }else{
-  	array_push($graph[$t[0]][$t[6]], array($t[2],$t[4]));
-  	array_push($graph[$t[6]][$t[0]], array($t[2],$t[4]));
-  }
+  $graph[$t[0]][$t[1]] = true;
+  $graph[$t[1]][$t[0]] = true;
+}
+$to_visit = array();
+$seen_actor = array();
+$seen_path = array();
+$all_bounded_actors = array();
+for($i = $lower_bound; $i <= $upper_bound; $i++){
+	$all_bounded_actors[$i] = array();
 }
 
-$q = "SELECT * from actor where id != $start;";
-$r = dbQuery($db, mkSQL($q, $start));
-$actor_degree = array();
-$to_visit = array();
-$found_shortest_paths = false;
-$all_bounded_actors = array();
-//$visited = array();
-$seen_actor = array();
-//$visited_path = array();
 $ida = 1;
 while($ida <= $upper_bound){
 	$current = array($start);
 	array_push($to_visit, $current);
+	$seen_actor[$start] = 1;
+	$seen_path = array($current);
 	while(sizeof($to_visit) > 0){
 		$current = array_pop($to_visit);
-		//echo "branch factor - ".sizeof($to_visit)."\n";
-		//echo "branch factor actors- ".sizeof($all_bounded_actors)."\n";
-		//$new_array = $current;
+		//array_push($seen_path, $current);
 		$inspection_node = end($current);
-		//$p = sizeof($current);
-		//print_r($current);	
+		if(sizeof($current) - 1 <= $upper_bound && sizeof($current) - 1 >= $lower_bound){
+			
+			array_push($all_bounded_actors[sizeof($current) - 1], actor_from_id($inspection_node));
+		}
 		if(sizeof($current) <= $ida){
 			foreach($graph[$inspection_node] as $node => $val){
 				if(!in_array($node, $current)){
-					$new_array = $current;
-					array_push($new_array, $node);
-					if(!in_array($current, $new_array)){
-						if(sizeof($current) >= $lower_bound && !in_array($node, $seen_actor)){
-							$actor = $node;
-							$length = sizeof($current);
-							array_push($all_bounded_actors,array($actor, $length));
+					if(!array_key_exists($node, $seen_actor)){
+						$seen_actor[$node] = 7;
+					}
+					if(!array_key_exists($node, $seen_path)){
+						$seen_path[$node] = -1;
+					}
+					if(!($seen_path[$node] == -1)){
+						//echo $seen_path[$node]."poo\n";
+						continue;
+					}else{
+						//echo $seen_actor[$node]."<===>".sizeof($current)."\n";
+						if(sizeof($current) <= $seen_actor[$node]){
+							$seen_path[$node] = 1;
+							$seen_actor[$node] = sizeof($current);
+							$new_path = $current;
+							array_push($new_path, $node);
+							array_push($to_visit, $new_path);
 						}
-						array_push($seen_actor, $node);
-						//unset($node);
-						array_push($to_visit, $new_array);
-						//unset($new_array);
 					}
 				}
 			} 
 		}
+
 	}
+	$seen_path = array();
 	$to_visit = array();
 	$ida++;
-	echo "pushing depth to $ida\n";
 }
+//print_r($all_bounded_actors);
 
-$i = 1;
 $visited = array();
+$i = 1;
 foreach($all_bounded_actors as $node => $val){
-	if((!in_array($val[0], $visited)) && (($val[1] >= $lower_bound) && ($val[1] <= $upper_bound))){
-		$name = actor_from_id($val[0]);
-		$count = $val[1];
-		//echo "$i. $name ($count)\n";
-		$i++;
-		array_push($visited, $val[0]);
+	$val = array_unique($val);
+	sort($val);
+	//print_r($val);
+	foreach($val as $actor){
+		//if((!in_array($actor, $visited))){
+			$count = $node;
+			echo $i.". $actor ($count)\n";
+			$i++;
+			//array_push($visited, $actor);
+		//}
 	}
+	
 }
 //print_r($all_bounded_actors);
 
