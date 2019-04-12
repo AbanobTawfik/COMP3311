@@ -5,19 +5,16 @@
 //                                TASK E                                      //
 ////////////////////////////////////////////////////////////////////////////////
 //
-// The toprank script takes in 3 or 4 commandline arguments:
-// ./toprank K StartYear EndYear
-// Or:
-// ./toprank Genres K StartYear EndYear
-// Where Genres is a list of genres separated by '&', K is the top K movies
-// Ranked by IMDB score and then by the number of votes
-// (both in descending order) between (and including) StartYear and EndYear,
-// With 1 <= K <= 1000, 1900 < StartYear <= EndYear < 2020 and your program
-// Will not be tested with a list of more than 8 genres. We interpret '&' as
-// conjunction, i.e., the selected movies shall contain all the specified
-// Genres. When Genres is not provided (when your program takes in 3 arguments),
-// Perform the same ranking but on movies with any genres. Do not include any
-// Movie titles with empty year.
+// Tasks E & F are inspired by Six degrees of Kevin Bacon. The shortest script 
+// takes in two actor names (with case insensitive matching), and lists the 
+// shortest path (up to Six Degrees of Separation) between two given actors. 
+// In other words, if two actors are not connected within six degrees, you  
+// can assume that they are not connected at all. The output will be a list 
+// of actors, the movies and the years. If there are more than one the same 
+// shortest paths, output all of them (all output lines are sorted 
+// alphabetically in ascending order). 
+// Reference(https://en.wikipedia.org/wiki/Six_Degrees_of_Kevin_Bacon): 
+// Six Degrees of Kevin Bacon
 //
 
 // include the common PHP code file
@@ -55,34 +52,47 @@ $goal = $t[0];
 if($start == $goal){
     return;
 }
-
+// flag for checking if shortest path found in bidirection and
+// array to store all the shortest paths
 $found_shortest  = false;
 $shortest_paths = array();
-// DEGREE 1 check
+
+// DEGREE 1 check using function from db (read updates.sql) set the
+// source as our start and search for degree 1 connections that have
+// the second actor node as the goal.
 $q = "SELECT * FROM degree1_actors($start) d1(a1 int, m1 int, a2 int)
                     WHERE d1.a2 = $goal;";
 $r = dbQuery($db, mkSQL($q));
 
+// this will go through the result of the query IF THERE IS A RESULT
+// WE WILL SET THE SEEN FLAG AS SEEN
 while($t = dbNext($r)){
+	// turn the seen flag on
     $found_shortest = true;
+    // extract data from query
     $actor0 = actor_from_id($t[0]);
     $movie_link01 = movie_from_id($t[1]);
     $actor1 = actor_from_id($t[2]);
-    
+    // push the path onto the array of all shortest paths
     array_push($shortest_paths, $actor0." was in ".$movie_link01." with ".$actor1."\n");
 }
 
+// if we went through the loop and found the shortest path we want to
+// print the shortest paths and return from the script
 if($found_shortest == true){
     print_shortest_paths($shortest_paths);
     return;
 }
-// DEGREE 2 check
+
+// DEGREE 2 check if degree 1 yielded no results 
+// we join degree 1 actor for start and degree 1 actor for the goal
+// and join on the intersection of the two degree 1 actors
 $q = "SELECT *
       FROM degree1_actors($start) d1(a1 int, m1 int, a2 int)
       JOIN degree1_actors($goal) d11(a1 int, m1 int, a2 int)
          ON d11.a2 = d1.a2;";
 $r = dbQuery($db, mkSQL($q));
-
+// similair as above to print shortest path if there is one
 while($t = dbNext($r)){
     $found_shortest = true;
     $actor0 = actor_from_id($t[0]);
@@ -100,7 +110,9 @@ if($found_shortest == true){
     return;
 }
 
-// DEGREE 3 check
+// DEGREE 3 check incase degree 1 and degree 2 fail
+// degree 3 is when we join actor start actor degree 2 with the goal actor
+// degree 1 (2 + 1 = 3). 
 $q = "SELECT d2.a1, d2.m1, d2.a2, d2.m2, d2.a3, d1.m1, d1.a1
       FROM degree2_actors($start) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
       JOIN degree1_actors($goal) d1(a1 int, m1 int, a2 int)
@@ -127,7 +139,9 @@ if($found_shortest == true){
     return;
 }
 
-// DEGREE 4 check
+// DEGREE 4 check if degree 1 2 and 3 all had no results then 
+// we check degree 4 by joining degree 2 from start and goal
+// and check if there is an intersection similar as above
 $q = "SELECT d2.a1, d2.m1, d2.a2, d2.m2, d2.a3, d22.m2, d22.a2, d22.m1, d22.a1
       FROM degree2_actors($start) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
       JOIN degree2_actors($goal) d22(a1 int, m1 int, a2 int, m2 int, a3 int)
@@ -158,58 +172,10 @@ if($found_shortest == true){
     return;
 }
 
-// DEGREE 2 check
-$q = "SELECT *
-      FROM degree1_actors($start) d1(a1 int, m1 int, a2 int)
-      JOIN degree1_actors($goal) d11(a1 int, m1 int, a2 int)
-         ON d11.a2 = d1.a2;";
-$r = dbQuery($db, mkSQL($q));
 
-while($t = dbNext($r)){
-    $found_shortest = true;
-    $actor0 = actor_from_id($t[0]);
-    $movie_link01 = movie_from_id($t[1]);
-    $actor1 = actor_from_id($t[2]);
-    $movie_link12 = movie_from_id($t[4]);
-    $actor2 = actor_from_id($t[5]);
-    
-    array_push($shortest_paths, $actor0." was in ".$movie_link01." with ".$actor1."; ".$actor1.
-                                         " was in ".$movie_link12. " with ".$actor2."\n");
-}
-
-if($found_shortest == true){
-    print_shortest_paths($shortest_paths);
-    return;
-}
-
-// DEGREE 3 check
-$q = "SELECT d2.a1, d2.m1, d2.a2, d2.m2, d2.a3, d1.m1, d1.a1
-      FROM degree2_actors($start) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
-      JOIN degree1_actors($goal) d1(a1 int, m1 int, a2 int)
-            ON d1.a2 = d2.a3;";
-$r = dbQuery($db, mkSQL($q));
-
-while($t = dbNext($r)){
-    $found_shortest = true;
-    $actor0 = actor_from_id($t[0]);
-    $movie_link01 = movie_from_id($t[1]);
-    $actor1 = actor_from_id($t[2]);
-    $movie_link12 = movie_from_id($t[3]);
-    $actor2 = actor_from_id($t[4]);
-    $movie_link23 = movie_from_id($t[5]);
-    $actor3 = actor_from_id($t[6]);
-    
-    array_push($shortest_paths, $actor0." was in ".$movie_link01." with ".$actor1."; ".$actor1.
-                                         " was in ".$movie_link12. " with ".$actor2."; ".$actor2." was in ".
-                                         $movie_link23." with ".$actor3."\n");
-}
-
-if($found_shortest == true){
-    print_shortest_paths($shortest_paths);
-    return;
-}
-
-// DEGREE 5 check
+// DEGREE 5 check if degree 1 2 3 and 4 all had no results then 
+// we check degree 4 by joining degree 3 from start and degree 2 for goal
+// and check if there is an intersection similar as above
 $q = "SELECT d3.a1, d3.m1, d3.a2, d3.m2, d3.a3, d3.m3, d3.a4, d2.m2, d2.a2, d2.m1, d2.a1
       FROM degree3_actors($start) d3(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
       JOIN degree2_actors($goal) d2(a1 int, m1 int, a2 int, m2 int, a3 int)
@@ -241,7 +207,9 @@ if($found_shortest == true){
     return;
 }
 
-// DEGREE 6 check
+// DEGREE 6 check if degree 1 2 3 4 and 5 all had no results then we perform our final check
+// we check degree 6 by joining degree 3 from start and degree 3 for goal
+// and check if there is an intersection similar as above
 $q = "SELECT d3.a1, d3.m1, d3.a2, d3.m2, d3.a3, d3.m3, d3.a4, d33.m3, d33.a3, d33.m2, d33.a2, d33.m1, d33.a1
       FROM degree3_actors($start) d3(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
       JOIN degree3_actors($goal) d33(a1 int, m1 int, a2 int, m2 int, a3 int, m3 int, a4 int)
