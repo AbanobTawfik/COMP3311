@@ -40,13 +40,13 @@ if(count($argv) == 4){
 	// if we ask for more movies than is allowed by specification
 	// throw an error message
 	if($argv[1] < 1 || $argv[1] > 1000){
-		exit("1 < amount < 1000 !");
+		exit("1 <= amount <= 1000 !\n");
 	}
 	// If our date parameters fall out of bounds from the specification
 	// then we want to throw an error message
 	if($argv[2] < 1900 || $argv[2] > 2020 || $argv[3] < $argv[2]
 		|| $argv[3] > 2020){
-		exit("1900 < start_year <= end_year < 2020");
+		exit("1900 < start_year <= end_year < 2020\n");
 	}
 	//run our query to select the top ranked movies 
 	$q = "select * from rankings order by rankings.score DESC, 
@@ -100,12 +100,12 @@ if(count($argv) == 4){
 // period specified and the amount specified where all the genres
 // passed in are contained within all genres of film printed.  
 if(count($argv) == 5){
-	if($argv[2] <= 1 || $argv[2] >= 1000){
-		exit("1 >= amount >= 1000 !");
+	if($argv[2] < 1 || $argv[2] > 1000){
+		exit("1 <= amount <= 1000 !\n");
 	}
 	if($argv[3] < 1900 || $argv[3] > 2020 || $argv[4] < $argv[3]
 		|| $argv[4] > 2020){
-		exit("1900 < start_year <= end_year < 2020");
+		exit("1900 < start_year <= end_year < 2020\n");
 	}
 	$q = "select * from rankings order by rankings.score DESC, 
 		  rankings.number_of_reviews DESC;";

@@ -32,7 +32,7 @@ $title = strtolower($argv[1]);
 // % on both sides so the substring can occur either side or in the middle of the
 // overall string
 $q = "SELECT * from movie_list WHERE movie_list.movie ILIKE '\%$title\%'
-    ORDER BY movie_list.year ASC, movie_list.score DESC;";
+    ORDER BY movie_list.year ASC, movie_list.score DESC, movie_list.movie ASC;";
 $r = dbQuery($db, mkSQL($q, $title));
 
 // Iterate through the results and print formatted
@@ -41,7 +41,7 @@ while ($t = dbNext($r)) {
   $comma_off = true;
   $first = true;
   if(empty($t[1]) && empty($t[2]) && empty($t[3])){
-  	  echo "$i. $t[0]";
+      echo "$i. $t[0]";
   }else{
       echo "$i. $t[0] (";
   }
