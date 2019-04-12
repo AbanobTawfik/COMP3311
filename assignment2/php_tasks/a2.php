@@ -35,6 +35,9 @@ function format_echo($table_value, $first, &$flag){
 	}
 }
 
+// this function is the exact same as the one above except it is
+// used to print the value 0 since it is also considered 0, this
+// is only useful for part D where we can have 0 genres or 0 keywords
 function format_echo2($table_value, $first, &$flag){
 	if (!$first && !empty($table_value) || $table_value == 0){
 	    if($flag){
@@ -52,6 +55,8 @@ function format_echo2($table_value, $first, &$flag){
 	}
 }
 
+// this function simply retrieves from the database the name of the actor
+// who has the id supplied.,
 function actor_from_id($id){
 	$db = dbConnect(DB_CONNECTION);
 	$q = "SELECT name from actor where id = $id LIMIT 1;";
@@ -61,6 +66,9 @@ function actor_from_id($id){
 	return $name;
 }
 
+// similarly this function returns the name of the movie AND year of the movie
+// from the id supplied, if the year is null it will only return the name rather
+// than the name and year.
 function movie_from_id($id){
 	$db = dbConnect(DB_CONNECTION);
 	$q = "SELECT title from movie where id = $id LIMIT 1;";
@@ -76,6 +84,9 @@ function movie_from_id($id){
 	return $name;
 }
 
+// this function returns the year of the movie, if this value doesn't exist
+// in the database we return a -1 to indicate no supplied year for correct
+// outputs
 function movie_year_from_id($id){
 	$db = dbConnect(DB_CONNECTION);
 	$q = "SELECT year from movie where id = $id LIMIT 1;";
@@ -88,6 +99,8 @@ function movie_year_from_id($id){
 	return -1;
 }
 
+// this function allows us to print in a sorted manner the contents of our
+// path with correct format
 function print_shortest_paths($array){
 	sort($array);
 	$i = 1;

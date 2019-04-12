@@ -5,19 +5,12 @@
 //                                TASK F                                      //
 ////////////////////////////////////////////////////////////////////////////////
 //
-// The toprank script takes in 3 or 4 commandline arguments:
-// ./toprank K StartYear EndYear
-// Or:
-// ./toprank Genres K StartYear EndYear
-// Where Genres is a list of genres separated by '&', K is the top K movies
-// Ranked by IMDB score and then by the number of votes
-// (both in descending order) between (and including) StartYear and EndYear,
-// With 1 <= K <= 1000, 1900 < StartYear <= EndYear < 2020 and your program
-// Will not be tested with a list of more than 8 genres. We interpret '&' as
-// conjunction, i.e., the selected movies shall contain all the specified
-// Genres. When Genres is not provided (when your program takes in 3 arguments),
-// Perform the same ranking but on movies with any genres. Do not include any
-// Movie titles with empty year.
+// The degrees takes in an actor name (case insensitive) and M & N degrees of 
+// separation (where 1 <= M <= N <= 6). It outputs all actors (no directors) 
+// that are exactly M to N degrees of separation (which represents the shortest 
+// path) from the given actor. Output the list of actors with the degree of 
+// separation indicated in brackets, sorted by the degree of separation and 
+// then by name, both in ascending order. For example:
 //
 
 // include the common PHP code file
@@ -32,73 +25,136 @@ $db = dbConnect(DB_CONNECTION);
 if (count($argv) != 4){ 
   exit("$usage\n");
 }
-
+// get our actor and the bounds for our program
 $start = $argv[1];
 $lower_bound = $argv[2];
 $upper_bound = $argv[3];
+// check if the bounds are within range of the specifications
 if($lower_bound > $upper_bound){
 	exit("1 =< lower_bound <= upper_bound <= 6");
 }
 if($lower_bound < 1 || $lower_bound > 6 || $upper_bound < 1 || $upper_bound > 6){
 	exit("1 =< lower_bound <= upper_bound <= 6");
 }
+// now we want to get the id of the actor we are performing our iterative depth
+// first search with
 $q = "SELECT id from actor where name ILIKE '$start' LIMIT 1;";
 $r = dbQuery($db, mkSQL($q, $start));
 $t = dbNext($r);
-
+// if the actor is not in the database, we want to exit with error message
 if(empty($t[0])){
 	exit("$start is not an actor\n");
 }
-
+// set the starting actor node of our search as id we got from input
 $start = $t[0];
+// now we want to get the graph that has all first node connections for
+// each actor. to create our graph
 $q = "SELECT actor1_node, actor2_node from graph;";
 $r = dbQuery($db, mkSQL($q));
 $graph = array();
+// create a basic 2d adjacency matrix graph based on our query result
 while (($t = dbNext($r))) {
   $graph[$t[0]][$t[1]] = true;
   $graph[$t[1]][$t[0]] = true;
 }
+
+// to perform this problem i performed an iterative deepening depth first search
+// in order to save memory space (i initially tried this for part E) however i 
+// really struggled to get part E within time and memory constraints
+// but the approach is useful for this task because we dont need all paths 
+// so we don't need to consider all paths through movies as states, but rather just
+// links as states. if you see my commented part in shortest it is extremely similar
+// to this.
+
+// we want to create our to visit stack
 $to_visit = array();
+// create a array to keep track of shortest distance from the actor based
+// on the length of the path, where the array key is the actor and the value
+// is the length of the path. The value only updates if it is a smaller
+// path length than the value stored in array for the actor. This is because
+// DFS doesn't always find the optimal solution and we may want to update
+// the cost of our actor incase we find them at a earlier depth.
 $seen_actor = array();
+// this will be a resetting visited array that keep track of actor on path
+// it will set the actor as unseen if its our first time seeing this actor and
+// proccess the actor. we will then set it to seen once we proccess and whilst
+// an actor is seen we do not enter the path. on each iteration we will reset 
+// this array.
 $seen_path = array();
+// final array of all bounded actors within the range of bounds
 $all_bounded_actors = array();
+// for each index in the bound we want to create an array
+// to store actors in
 for($i = $lower_bound; $i <= $upper_bound; $i++){
 	$all_bounded_actors[$i] = array();
 }
-
+// set the initial depth of our search to be 1
 $ida = 1;
+// while we have not gone through all depths in our search we want to keep
+// performing our search at a deeper depth
 while($ida <= $upper_bound){
+	// create a path array beginning at our initial actors
 	$current = array($start);
+	// push the initial path into our open set
 	array_push($to_visit, $current);
+	// set the initial actor as seen and push the initial path
+	// as seen.
 	$seen_actor[$start] = 1;
 	$seen_path = array($current);
+	// while we have nodes to expand
 	while(sizeof($to_visit) > 0){
+		// pop the current path from the stack
 		$current = array_pop($to_visit);
 		//array_push($seen_path, $current);
+		// get the last node on our path to expand the path
 		$inspection_node = end($current);
+		// if the size of our path is within the bounds we want to push the 
+		// actor on the end of the current path to the actors on bounded 
+		// at the index of their current length
 		if(sizeof($current) - 1 <= $upper_bound && sizeof($current) - 1 >= $lower_bound){
-			
 			array_push($all_bounded_actors[sizeof($current) - 1], actor_from_id($inspection_node));
 		}
+		// otherwise we want to continue our iterative deepening search as usual
+		// if the length of the current path is less than our current depth
 		if(sizeof($current) <= $ida){
+			// for each neighbour node to the current end node of the path
 			foreach($graph[$inspection_node] as $node => $val){
+				// if the neighbour node is not in the current path
+				// we want to proccess the current node
 				if(!in_array($node, $current)){
+					// if this the first time seeing this node
 					if(!array_key_exists($node, $seen_actor)){
+						// set its length to be the maximum length possible (6 is max)
+						// so 7 is beyond scope of our depths
 						$seen_actor[$node] = 7;
 					}
+					// if this is the first time seeing this node on this iteration 
+					// we want to set the node as not been seen before
 					if(!array_key_exists($node, $seen_path)){
 						$seen_path[$node] = -1;
 					}
+					// if this node DOES NOT have the visited flag set as false
+					// as this depth, we want to ignore this node (it allows us)
+					// to skip unnecessary repetition path
 					if(!($seen_path[$node] == -1)){
 						//echo $seen_path[$node]."poo\n";
 						continue;
 					}else{
 						//echo $seen_actor[$node]."<===>".sizeof($current)."\n";
+						// now if the size of our node is larger than the 
+						// length stored in our overall seen length array
 						if(sizeof($current) <= $seen_actor[$node]){
+							// set the current node as seen for this iteration
 							$seen_path[$node] = 1;
+							// update the size of the new potentially more optimal path
+							// we use <= instead of < to potentially re-expand 
+							// paths that could have better length
 							$seen_actor[$node] = sizeof($current);
+							// push the neighbour node onto the current path
+							// to create a new state path.
 							$new_path = $current;
 							array_push($new_path, $node);
+							// push the new path onto the open set
 							array_push($to_visit, $new_path);
 						}
 					}
@@ -106,24 +162,32 @@ while($ida <= $upper_bound){
 			} 
 		}
 	}
+	// reset our open array for the next depth
 	$seen_path = array();
+	// reset our visited array for next depth processing
 	$to_visit = array();
+	// push the search into the next depth
 	$ida++;
 }
 //print_r($all_bounded_actors);
-
+// array to get rid of duplicates
 $visited = array();
 $i = 1;
+// for each actor inside of our bounded degrees
 foreach($all_bounded_actors as $node => $val){
+	// delete duplicate nodes at same depth
+	// and sort it not case sensitively
 	$val = array_unique($val);
 	natcasesort($val);
 	//print_r($val);
+	// for each node in the depth we want to print out
+	// the actor name and the degree for the actor
 	foreach($val as $actor){
 		//if((!in_array($actor, $visited))){
-			$count = $node;
-			echo $i.". $actor ($count)\n";
-			$i++;
-			//array_push($visited, $actor);
+		$count = $node;
+		echo $i.". $actor ($count)\n";
+		$i++;
+		//array_push($visited, $actor);
 		//}
 	}
 	

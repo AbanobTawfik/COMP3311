@@ -2,22 +2,21 @@
 <?php
 
 ////////////////////////////////////////////////////////////////////////////////
-//                                TASK C                                      //
+//                                TASK D                                      //
 ////////////////////////////////////////////////////////////////////////////////
 //
-// The toprank script takes in 3 or 4 commandline arguments:
-// ./toprank K StartYear EndYear
-// Or:
-// ./toprank Genres K StartYear EndYear
-// Where Genres is a list of genres separated by '&', K is the top K movies
-// Ranked by IMDB score and then by the number of votes
-// (both in descending order) between (and including) StartYear and EndYear,
-// With 1 <= K <= 1000, 1900 < StartYear <= EndYear < 2020 and your program
-// Will not be tested with a list of more than 8 genres. We interpret '&' as
-// conjunction, i.e., the selected movies shall contain all the specified
-// Genres. When Genres is not provided (when your program takes in 3 arguments),
-// Perform the same ranking but on movies with any genres. Do not include any
-// Movie titles with empty year.
+// Suppose you are asked to implement a movie recommendation feature for IMDB. 
+// Based on the movie that a user is currently browsing, a list of similar 
+// movies  will be presented. In Task D, the similar script takes in 2 arguments: 
+// a  case-insensitive movie full title (this shall produce a single match. 
+// If not, just use the one with the most recent year as if it is the only 
+// match); and a number N (1 <= N <= 1000). It will then find its similar N 
+// movies (excluding itself) that share the maximum number of common genres 
+// (output nothing if no other movies have any common genres with the given 
+// movie). For those with the same number of common genres, they will then be 
+// ranked by the maximum number (including zero number) of common plot keywords. 
+// If both are the same, then they will be ranked by their IMDB scores and then
+// by the number of votes (the higher the better).
 //
 
 // include the common PHP code file
@@ -33,12 +32,18 @@ if (count($argv) != 3){
   exit("$usage\n");
 }
 
+// if the number of movies requested is less than 0 OR the number
+// of movies is more than 1000 we want to exit as we were given
+// this condition from the specification
 if($argv[2] > 1000 || $argv[2] < 1){
 	exit("1 <= amount <= 1000\n");
 }
 
+// retrieve movie name and number of rows we print
 $movie = $argv[1];
 $amount = $argv[2];
+// now we perform the query which was explained in updates.sql
+// most work is done on the database side.
 $q = " SELECT big_query.id,
     	big_query.title,
     	big_query.year,
