@@ -67,11 +67,7 @@ $r = dbQuery($db, mkSQL($q));
 // this will go through the result of the query IF THERE IS A RESULT
 // WE WILL SET THE SEEN FLAG AS SEEN
 while($t = dbNext($r)){
-<<<<<<< HEAD
   // turn the seen flag on
-=======
-	// turn the seen flag on
->>>>>>> 0598c5d74767fcba72cc561a2a07276a20a27cfe
     $found_shortest = true;
     // extract data from query
     $actor0 = actor_from_id($t[0]);
@@ -176,10 +172,7 @@ if($found_shortest == true){
     return;
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 0598c5d74767fcba72cc561a2a07276a20a27cfe
 // DEGREE 5 check if degree 1 2 3 and 4 all had no results then 
 // we check degree 4 by joining degree 3 from start and degree 2 for goal
 // and check if there is an intersection similar as above
