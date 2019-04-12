@@ -29,7 +29,7 @@ if (count($argv) < 2){
 }
 
 // Get the return results
-$actor = strtolower($argv[1]);
+$actor = $argv[1];
 // use a more efficient query than the one used in the view for database
 // significantly reduces search by limiting to actor
 $q = "SELECT actor_movie_id.actor_name,
@@ -43,7 +43,7 @@ $q = "SELECT actor_movie_id.actor_name,
           FROM actor actor_list
                FULL OUTER JOIN acting acting_list
                           ON acting_list.actor_id = actor_list.id
-                             WHERE LOWER(actor_list.name) = '$actor') actor_movie_id
+                             WHERE actor_list.name ILIKE '$actor') actor_movie_id
          LEFT JOIN movie movie_list
                     ON movie_list.id = actor_movie_id.movie_id
          LEFT JOIN rating rating_list

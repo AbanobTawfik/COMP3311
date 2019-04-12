@@ -35,6 +35,23 @@ function format_echo($table_value, $first, &$flag){
 	}
 }
 
+function format_echo2($table_value, $first, &$flag){
+	if (!$first && !empty($table_value) || $table_value == 0){
+	    if($flag){
+	    	echo "$table_value";
+	    	$flag = false;
+	    }else{  
+	      echo ", $table_value";
+	  	}
+   		return;
+    }
+	if($first && !empty($table_value) || $table_value == 0){
+		echo "$table_value";
+		$flag = false;
+		return;
+	}
+}
+
 function actor_from_id($id){
 	$db = dbConnect(DB_CONNECTION);
 	$q = "SELECT name from actor where id = $id LIMIT 1;";

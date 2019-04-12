@@ -102,17 +102,17 @@ while (($t = dbNext($r)) && $i < $amount + 1) {
   }
   if(!empty($t[3]) || !empty($t[4]) || !empty($t[5]) || !empty($t[6])){
   	echo "[";
-  	if(!empty($t[3])){
-  		format_echo($t[3], true, $comma_off_square_braces);
+  	if((!empty($t[3])) || ($t[3] == 0)){
+  		format_echo2($t[3], true, $comma_off_square_braces);
   	}
-  	if(!empty($t[4])){
-  		format_echo($t[4], false, $comma_off_square_braces);
+  	if((!empty($t[4])) || ($t[4] == 0)){
+  		format_echo2($t[4], false, $comma_off_square_braces);
   	}
   	if(!empty($t[5])){
-  		format_echo($t[5], false, $comma_off_square_braces);
+  		format_echo2($t[5], false, $comma_off_square_braces);
   	}
   	if(!empty($t[6])){
-  		format_echo($t[6], false, $comma_off_square_braces);
+  		format_echo2($t[6], false, $comma_off_square_braces);
   	}
   	echo "]\n";
   }

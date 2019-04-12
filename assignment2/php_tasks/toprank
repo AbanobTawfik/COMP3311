@@ -111,6 +111,7 @@ if(count($argv) == 5){
 		  rankings.number_of_reviews DESC;";
 	$r = dbQuery($db, mkSQL($q));
 	$genre_match = $argv[1];
+	$genre_match = strtolower($genre_match);
 	// here we try to get the array of genres sorted to do a direct
 	// comparison with the array of genres in the database
 	$sorted_genre_match = explode("&",$genre_match);
@@ -131,6 +132,7 @@ if(count($argv) == 5){
 	  	  	// we want to get the list genres from the movie from our table
 	  	  	// next we want to store it in an array and sort the array 
 	  	  	$db_genre_match = $t[7];
+	  	  	$db_genre_match = strtolower($db_genre_match);
 	  	  	$sorted_db_genre_match = explode("&",$db_genre_match);
 	  	  	sort($sorted_db_genre_match);
 	  	  	// if ALL the genres specified are found in the database

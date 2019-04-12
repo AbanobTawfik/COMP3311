@@ -105,7 +105,6 @@ while($ida <= $upper_bound){
 				}
 			} 
 		}
-
 	}
 	$seen_path = array();
 	$to_visit = array();
@@ -117,7 +116,7 @@ $visited = array();
 $i = 1;
 foreach($all_bounded_actors as $node => $val){
 	$val = array_unique($val);
-	sort($val);
+	natcasesort($val);
 	//print_r($val);
 	foreach($val as $actor){
 		//if((!in_array($actor, $visited))){
